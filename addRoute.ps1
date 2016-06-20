@@ -78,12 +78,7 @@ function End-of-Job()
 if ($Exec -eq 1)
 {
   $bDebug     = $False
-
-  #Test
-  #$strPath   = "c:\Program Files\Centerity TESTBende"
-  #Prod
-  $strPath    = "C:\Management\Programs\Centerity Monitor Agent"
-
+  
   $strLogHead = "==================================================================================================" 
 
   #TARGET IP who's default gateway should be determined and used
@@ -118,24 +113,9 @@ if ($Exec -eq 1)
   $strLogBase  = $strMyName + "-"
   $strLogExt   = ".log"
 
-
-  ############ 
-  # Checks (2)
-  ############
-  #(2A) logfile) path....
-  if ( -Not ( Test-Path $strPath ))  
-  {
-    Write-Host "'"$strPath"' is not a valid path"
-    DeleteShare
-    Exit
-  }
-
   #######################################################
-  # Logfile (3)
+  # Logfile (2)
   #######################################################
-  #TEST 
-  #$strLogFile = "$strPath\$strLogBase$intLogSeq$strLogExt"
-  #PROD
   $strLogFile ="B:\scripts\log\$strLogBase$Date$strLogExt"
 
   Write-Log $strLogHead
@@ -143,9 +123,8 @@ if ($Exec -eq 1)
   Write-Log $strLogHead
 
   ################
-  # Checks Cntd...
+  # Checks 
   ################
-
   #Windows 2003 ?
   if ( ! $OS.Contains($OSVer) )
   {
@@ -188,11 +167,11 @@ if ($Exec -eq 1)
   }
 
   ##########
-  # Run (4)
+  # Run (3)
   ##########
 
   ########################
-  # (4A) Get routing table
+  # (3A) Get routing table
   ########################
   $strRoute=Get-WmiObject Win32_IP4RouteTable 
   #===========================================================================  
@@ -206,7 +185,7 @@ if ($Exec -eq 1)
   #        127.0.0.0        255.0.0.0         On-link         127.0.0.1    306
 
   ####################################################  
-  # (4B) Loop thru routing table rows until 
+  # (3B) Loop thru routing table rows until 
   #      first 3 octets of the Network Destination IP 
   #                   -eq
   #      first 3 octets of variabele strDestination
@@ -263,7 +242,7 @@ if ($Exec -eq 1)
   }  
 
   ##########################################
-  # (4C) Loop done; default gateway found ?
+  # (3C) Loop done; default gateway found ?
   ##########################################
   if ( $bFound -eq $True )  
   {
@@ -300,7 +279,7 @@ if ($Exec -eq 1)
   }
 
   ##########
-  # Exit (5)
+  # Exit (4)
   ##########
   End-of-Job
 }
