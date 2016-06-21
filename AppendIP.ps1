@@ -24,13 +24,14 @@ $OS       = (Get-WmiObject -Class Win32_OperatingSystem).Caption
 $Date     = Get-Date -format "dd-MM-yyyy"
 $FullDate = Get-Date
 
-#Create Share for logging
+Create Share for logging
 CreateShare
 
 ##########  Variables ##########
 #Filter on servername: yes, no, When using multple server use comma "Server1"","Server2"
 $SrvFlt = "yes"
-#TND $SrvLst = @(SW44Z0005","SW44R0026","SW44R0025","SW44R0027","SW44R0100","SW44R0110","SW44R0111")
+#TND $SrvLst = @("SW44Z0005","SW44R0026","SW44R0025","SW44R0027","SW44R0100","SW44R0110","SW44R0111")
+$SrvLst = ("SW44Z0005")
 #ACC $SrvLst = @("SW44Z0004","SW44R0028","SW44R0033","SW44R0034","SW44R0035","SW44R0036","SW44R0037","SW44R0038","SW44R0039","SW44R0040","SW44R0055","SW44R0060","SW44R0068","SW44R0089","SW44R0117","SW44R0118","SW44R0119","SW44R0139","SW44R0099","SW44R0108","SW44R0109")
 #PRD $SrvLst = @(SW44Z0003","SW44Z0006","SW44Z0008","SW44R0057","SW44R0012","SW44R0016","SW44R0017","SW44R0018","SW44R0019","SW44R0020","SW44R0021","SW44R0022","SW44R0023","SW44R0054","SW44R0061","SW44R0087","SW44R0090","SW44R0112","SW44R0113","SW44R0114","SW44R0115","SW44R0116","SW44R0138","SW44R0098","SW44R0104","SW44R0107")
 $OSVer  = "2003"
@@ -212,6 +213,7 @@ if ($Exec -eq 1)
   $strPath         = "C:\Management\Programs\Centerity Monitor Agent"
   
   $strFileName_In  = "NSC.ini"
+
   $strFile_In      = "$strPath\$strFileName_In"
   
   $strFileName_Out = "output_file.txt"
@@ -279,7 +281,7 @@ if ($Exec -eq 1)
   # Logfile (3)
   #######################################################
   #TEST 
-  #$strLogFile = "$strPath\$strLogBase$intLogSeq$strLogExt"
+  # $strLogFile = "$strPath\$strLogBase$intLogSeq$strLogExt"
   #PROD
   $strLogFile ="B:\scripts\log\$strLogBase$Date$strLogExt"
   
@@ -462,15 +464,16 @@ if ($Exec -eq 1)
             ##################################################################
             # (5.D) Restart NRPE
             ##################################################################
-            Restart-Service nrpe
+            $strService="nrpe"
+            Restart-Service $strService -ErrorAction SilentlyContinue
             $rc=$?
             if ( $rc -eq $True )
             {
-              Write-Log "OK: Succesfully restarted nrpe service"
+              Write-Log "OK: Succesfully restarted $strService service"
             }
             else  
             {
-              Write-Log "ERR: Restart nrpe service was unsuccesful !"
+              Write-Log "ERR: Restart $strService service was unsuccesful !"
               End-of-Job
             }
             
@@ -494,7 +497,6 @@ if ($Exec -eq 1)
       }
     } 
   }
-  
   
   ####################################################################################################
   # Exit (6)
