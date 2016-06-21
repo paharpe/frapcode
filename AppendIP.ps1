@@ -450,14 +450,30 @@ if ($Exec -eq 1)
         if ( $rc -eq $True )
         {
           Write-Log "OK: Original inputfile: $strFile_In has been renamed to: $strFileName_In_Save"
-          ###############################################################
-          # (5.C) Changed file is going to be the new inputfile => Rename
-          ###############################################################
+          ##################################################################
+          # (5.C) Rename file containing the change to the original filename
+          ##################################################################
           Rename-Item $strFile_Out $strFile_In
           $rc=$?
           if ( $rc -eq $True )
           {          
             Write-Log "OK: Written outputfile: $strFile_Out has been renamed to: $strFileName_In"
+            
+            ##################################################################
+            # (5.D) Restart NRPE
+            ##################################################################
+            Restart-Service nrpe
+            $rc=$?
+            if ( $rc -eq $True )
+            {
+              Write-Log "OK: Succesfully restarted nrpe service"
+            }
+            else  
+            {
+              Write-Log "ERR: Restart nrpe service was unsuccesful !"
+              End-of-Job
+            }
+            
           }
           else
           {
