@@ -4,7 +4,7 @@
 function Write-Log {
 ##################
   LOG_ROW=$1
-  echo `date +%k:%M:%S`-${LOG_ROW} >> ${LOG_FILE}
+  echo `date +%H:%M:%S`-${LOG_ROW} >> ${LOG_FILE}
 }
 
 #################
@@ -24,6 +24,17 @@ function Exist-IP {
   echo ${EXIST}
 }
 
+###################
+function Is-Good-IP {
+###################
+  IP_NEW=$1
+  GOOD=false
+  if [[  ${IP_NEW} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]];
+  then
+    GOOD=true
+  fi
+  echo ${GOOD}
+}
 
 ###############################################
 # INIT
@@ -45,16 +56,23 @@ fi
 ################################
 #Input
 ################################
-NOW_FULL=`date +%Y-%m-%d' '%k:%M:%S`
-FLATIN_PATH="/usr/local/nagios/etc"
+NOW_FULL=`date +%Y-%m-%d' '%H:%M:%S`
+
+#PROD
+#FLATIN_PATH="/usr/local/nagios/etc"
+#TEST
+FLATIN_PATH="/home/a-pharpe/data"
+
 FLATIN_FILENAME="nrpe.cfg"
 FLATIN_FILE=${FLATIN_PATH}/${FLATIN_FILENAME}
+FLATIN_FILE_TEMP="${FLATIN_FILE}_TMP"
+FLATIN_FILE_SAVE="${FLATIN_FILE}_`date +%Y%m%d_%H%M%S`"
 
 ###############################
 #Other
 ###############################
 TARGET="allowed_hosts"
-APPEND="143.60.88.13, 145.222.98.143 , 10.0.0.1"
+APPEND="143.10.88.13, 145.222.98.143 , 10.0.0.1"
 
 ##############################################
 # CHECK
@@ -71,6 +89,8 @@ fi
 ###############################
 # PUT existing IP's in an array
 ###############################
+IPS_NOW_FULL=`grep ^${TARGET} ${FLATIN_FILE}`
+
 IPS_NOW=`grep ^${TARGET} ${FLATIN_FILE} | cut -d'=' -f2`
 IFS=',' read -a IPS_NOW_ARRAY <<< "${IPS_NOW}"
 
@@ -87,8 +107,8 @@ fi
 # PUT new IP's in an array
 ##########################
 IPS_NEW=${APPEND}
-IFS=',' read -a IPS_NEW_ARRAY <<< "${IPS_NEW}"
 
+IFS=',' read -a IPS_NEW_ARRAY <<< "${IPS_NEW}"
 A_NEW_LEN=${#IPS_NEW_ARRAY[@]}
 
 if [[ ${A_NEW_LEN} -eq 0 ]];
@@ -96,22 +116,44 @@ then
   Write-Log "No new IP-address in string"
   exit
 else
+  APPEND_NEW=""
   for (( A_NEW_IND=0; A_NEW_IND<${A_NEW_LEN}; A_NEW_IND++ ));
   do
     IP_NEW=`echo ${IPS_NEW_ARRAY[$A_NEW_IND]} | xargs`
-    if [[  ${IP_NEW} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+    if [[ $(Is-Good-IP ${IP_NEW}) = true ]];
+    then
       echo "${A_NEW_IND}  ${IP_NEW}"
-      RC=Exist-IP ${IP_NEW}
-echo ${RC}
-      if [[ ${RC} = true ]];
+      if [[ $(Exist-IP ${IP_NEW}) = true ]];
       then
-        echo "${IP_NEW}  bestaat al !"
+        :
+        # echo "${IP_NEW}  already exists !"
       else
-        echo  "${IP_NEW}  bestaat niet !"
+        # echo  "${IP_NEW} does not exist (yet)"
+        APPEND_NEW="${APPEND_NEW},${IP_NEW}"
       fi
     else
       Write-Log "${IP_NEW} is not a correct IP-address !"
       exit
     fi
-  done
+ done
+  echo "The new to append string is:  ${APPEND_NEW}"
+  IPS_NEW_FULL="${IPS_NOW_FULL}${APPEND_NEW}"
+  echo ${IPS_NEW_FULL}
+  sed "s/${IPS_NOW_FULL}/${IPS_NEW_FULL}/g" "${FLATIN_FILE}" > ${FLATIN_FILE_TEMP}
+  if [[ -s ${FLATIN_FILE_TEMP} ]];
+  then
+    mv ${FLATIN_FILE} ${FLATIN_FILE_SAVE}
+    if [[ $? -eq 0 ]];
+    then
+      mv ${FLATIN_FILE_TEMP} ${FLATIN_FILE}
+      if [[ $? -ne 0 ]];
+      then
+        Write-Log "Rename changed file to working version NOT successful !"
+      fi
+    else
+      Write-Log "Renamei working version to SAVE file NOT successful !"
+    fi
+  else
+    Write-Log "Temporary file ${FLATIN_FILE_TEMP} contains no data !"
+  fi
 fi
