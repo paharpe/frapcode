@@ -55,11 +55,11 @@ function Is-Good-IP {
 ###################
 function End-of-Job {
 ###################
-Write-Log ${LOGHEAD}
-Write-Log "End run"
-Write-Log ${LOGHEAD}
+  Write-Log ${LOGHEAD}
+  Write-Log "End run"
+  Write-Log ${LOGHEAD}
 
-exit
+  exit
 }
 
 ###############################################
