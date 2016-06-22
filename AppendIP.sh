@@ -43,13 +43,23 @@ function Exist-IP {
 ###################
 function Is-Good-IP {
 ###################
- IP_NEW=$1
+  IP_NEW=$1
   GOOD=false
   if [[  ${IP_NEW} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]];
   then
     GOOD=true
   fi
   echo ${GOOD}
+}
+
+###################
+function End-of-Job {
+###################
+Write-Log ${LOGHEAD}
+Write-Log "End run"
+Write-Log ${LOGHEAD}
+
+exit
 }
 
 ###############################################
@@ -87,20 +97,25 @@ FLATIN_FILE_SAVE="${FLATIN_FILE}_`date +%Y%m%d_%H%M%S`"
 ###############################
 #Other
 ###############################
+LOGHEAD="========================================================================"
+
 TARGET="allowed_hosts"
 APPEND="143.10.88.13, 145.222.98.143 , 10.0.0.1"
+
+#############################################
+# START
+#############################################
+Write-Log ${LOGHEAD}
+Write-Log "Start run"
+Write-Log ${LOGHEAD}
 
 ##############################################
 # CHECK
 ##############################################
 if [[ ! -f ${FLATIN_FILE} ]]; then
   Write-Log "Inputfile does not exist"
-  exit
+  End-of-Job
 fi
-
-#############################################
-# START
-#############################################
 
 ###############################
 # PUT existing IP's in an array
@@ -115,7 +130,7 @@ A_NOW_LEN=${#IPS_NOW_ARRAY[@]}
 if [[ ${A_NOW_LEN} -eq 0 ]];
 then
   Write-Log "Target ${TARGET} not found !"
-  exit
+  End-of-Job
 fi
 
 
@@ -130,7 +145,7 @@ A_NEW_LEN=${#IPS_NEW_ARRAY[@]}
 if [[ ${A_NEW_LEN} -eq 0 ]];
 then
   Write-Log "No new IP-address in inputstring"
-  exit
+  End-of-Job
 else
   # Now, foreach new ip-address in the array, find out if this address
   # already exists and build a new string ( APPEND_NEW ) with addresses
@@ -147,12 +162,12 @@ else
         :
         # echo "${IP_NEW}  already exists !"
       else
- # echo  "${IP_NEW} does not exist (yet)"
+        # echo  "${IP_NEW} does not exist (yet)"
         APPEND_NEW="${APPEND_NEW},${IP_NEW}"
       fi
     else
       Write-Log "${IP_NEW} is not a correct IP-address !"
-      exit
+      End-of-Job
     fi
   done
 
@@ -169,7 +184,7 @@ else
     sed "s/${IPS_NOW_FULL}/${IPS_NEW_FULL}/g" "${FLATIN_FILE}" > ${FLATIN_FILE_TEMP}
     if [[ -s ${FLATIN_FILE_TEMP} ]];
     then
-      # Rename the original working version file to Save file version
+ # Rename the original working version file to Save file version
       mv ${FLATIN_FILE} ${FLATIN_FILE_SAVE}
       if [[ $? -eq 0 ]];
       then
@@ -187,3 +202,5 @@ else
     fi
   fi
 fi
+
+End-of-Job
