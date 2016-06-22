@@ -149,7 +149,7 @@ then
 else
   # Now, foreach new ip-address in the array, find out if this address
   # already exists and build a new string ( APPEND_NEW ) with addresses
-  # to be added later on
+ # to be added later on
   APPEND_NEW=""
   for (( A_NEW_IND=0; A_NEW_IND<${A_NEW_LEN}; A_NEW_IND++ ));
   do
@@ -184,20 +184,24 @@ else
     sed "s/${IPS_NOW_FULL}/${IPS_NEW_FULL}/g" "${FLATIN_FILE}" > ${FLATIN_FILE_TEMP}
     if [[ -s ${FLATIN_FILE_TEMP} ]];
     then
- # Rename the original working version file to Save file version
+      Write-Log "Succesfully created ${FLATIN_FILE_TEMP}"
+      # Rename the original working version file to Save file version
       mv ${FLATIN_FILE} ${FLATIN_FILE_SAVE}
       if [[ $? -eq 0 ]];
       then
+        Write-Log "Succesfully renamed ${FLATIN_FILE} to ${FLATIN_FILE_SAVE}"
         # Rename the changed file to the new working verion
         mv ${FLATIN_FILE_TEMP} ${FLATIN_FILE}
-        if [[ $? -ne 0 ]];
+        if [[ $? -eq 0 ]];
         then
+          Write-Log "Succesfully renamed ${FLATIN_FILE_TEMP} to ${FLATIN_FILE}"
+        else
           Write-Log "Rename changed file to working version NOT successful !"
         fi
       else
-        Write-Log "Renamei working version to SAVE file NOT successful !"
+        Write-Log "Rename working version to SAVE file NOT successful !"
       fi
-    else
+ else
       Write-Log "Temporary file ${FLATIN_FILE_TEMP} contains no data !"
     fi
   fi
