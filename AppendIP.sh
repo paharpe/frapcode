@@ -1,5 +1,21 @@
 #!/bin/bash
 
+###############################################################################################
+# Name        : AppendIP.sh
+# Purpose     : Concatenate an additional string containing IP-addresses to an existing string
+#               in $FLATIN_FILE
+# Syntax      : ./AppendIP.sh
+# Parms       : none
+# Dependancies: none
+# Files       : Inputfile is read and wil be renamed to save version: inputfile_yyyymmdd_hhmmss
+#             : Outputfile containing the change is first named inputfilename_TMP
+#             : After successful operations the Outputfile is renamed back to Inputfile
+#             : Logfile is named something like @Serverid_AppendIP_yyyy-mm-dd.log
+# Notes       : All settings should be made in the Init (1) section
+# Author      : PH
+# Date        : 2016-06-22
+###############################################################################################
+
 ##################
 function Write-Log {
 ##################
@@ -27,7 +43,7 @@ function Exist-IP {
 ###################
 function Is-Good-IP {
 ###################
-  IP_NEW=$1
+ IP_NEW=$1
   GOOD=false
   if [[  ${IP_NEW} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]];
   then
@@ -113,47 +129,61 @@ A_NEW_LEN=${#IPS_NEW_ARRAY[@]}
 
 if [[ ${A_NEW_LEN} -eq 0 ]];
 then
-  Write-Log "No new IP-address in string"
+  Write-Log "No new IP-address in inputstring"
   exit
 else
+  # Now, foreach new ip-address in the array, find out if this address
+  # already exists and build a new string ( APPEND_NEW ) with addresses
+  # to be added later on
   APPEND_NEW=""
   for (( A_NEW_IND=0; A_NEW_IND<${A_NEW_LEN}; A_NEW_IND++ ));
   do
     IP_NEW=`echo ${IPS_NEW_ARRAY[$A_NEW_IND]} | xargs`
     if [[ $(Is-Good-IP ${IP_NEW}) = true ]];
     then
-      echo "${A_NEW_IND}  ${IP_NEW}"
+      # echo "${A_NEW_IND}  ${IP_NEW}"
       if [[ $(Exist-IP ${IP_NEW}) = true ]];
       then
         :
         # echo "${IP_NEW}  already exists !"
       else
-        # echo  "${IP_NEW} does not exist (yet)"
+ # echo  "${IP_NEW} does not exist (yet)"
         APPEND_NEW="${APPEND_NEW},${IP_NEW}"
       fi
     else
       Write-Log "${IP_NEW} is not a correct IP-address !"
       exit
     fi
- done
-  echo "The new to append string is:  ${APPEND_NEW}"
-  IPS_NEW_FULL="${IPS_NOW_FULL}${APPEND_NEW}"
-  echo ${IPS_NEW_FULL}
-  sed "s/${IPS_NOW_FULL}/${IPS_NEW_FULL}/g" "${FLATIN_FILE}" > ${FLATIN_FILE_TEMP}
-  if [[ -s ${FLATIN_FILE_TEMP} ]];
+  done
+
+  if [[ "${APPEND_NEW}" = "" ]];
   then
-    mv ${FLATIN_FILE} ${FLATIN_FILE_SAVE}
-    if [[ $? -eq 0 ]];
+    # Nothing new !
+    Write-Log "All new IP addresses already exist !"
+  else
+    # echo "The new to append string is:  ${APPEND_NEW}"
+    IPS_NEW_FULL="${IPS_NOW_FULL}${APPEND_NEW}"
+    # echo ${IPS_NEW_FULL}
+
+    # Insert the changed string into the new ( temporary ) file
+    sed "s/${IPS_NOW_FULL}/${IPS_NEW_FULL}/g" "${FLATIN_FILE}" > ${FLATIN_FILE_TEMP}
+    if [[ -s ${FLATIN_FILE_TEMP} ]];
     then
-      mv ${FLATIN_FILE_TEMP} ${FLATIN_FILE}
-      if [[ $? -ne 0 ]];
+      # Rename the original working version file to Save file version
+      mv ${FLATIN_FILE} ${FLATIN_FILE_SAVE}
+      if [[ $? -eq 0 ]];
       then
-        Write-Log "Rename changed file to working version NOT successful !"
+        # Rename the changed file to the new working verion
+        mv ${FLATIN_FILE_TEMP} ${FLATIN_FILE}
+        if [[ $? -ne 0 ]];
+        then
+          Write-Log "Rename changed file to working version NOT successful !"
+        fi
+      else
+        Write-Log "Renamei working version to SAVE file NOT successful !"
       fi
     else
-      Write-Log "Renamei working version to SAVE file NOT successful !"
+      Write-Log "Temporary file ${FLATIN_FILE_TEMP} contains no data !"
     fi
-  else
-    Write-Log "Temporary file ${FLATIN_FILE_TEMP} contains no data !"
   fi
 fi
