@@ -3,7 +3,8 @@
 # Purpose     : Concatenate an extra string containing IP-addresses / subnet bits to 
 #               an existing string that may only exist once in the file beeing changed       
 # Syntax      : ./AppendIP.ps1 <@file beeing changed>
-# Parms       : @filename beeing changed ( including full path ) 
+# Parms       : 1: (Mandatory) => @filename beeing changed ( including full path ) 
+#               2: (Optional)  => Y if the service needs te be restarted after the change
 # Dependancies: none
 # Files       : Inputfile is read and wil be renamed into inputfile-yyyymmdd-hhmmss
 #             : Outputfile is renamed to the new inputfilename finaly
@@ -15,7 +16,7 @@
 Set-PSDebug -Trace 0
 
 ########################################
-# Check and proces Parms. Parm muste be
+# Check and proces Parm[0]. Must be
 # @filename including full path
 ########################################
 if ( $ARGS[0] -eq $null )
@@ -29,6 +30,16 @@ else
   $strFile2bChanged=$ARGS[0]
 }
 
+########################################
+# Check and proces Parms[1]. Must be
+# Y if a service restart is needed after
+# the INI file change
+########################################
+$bRestart_service = $false
+if ( $ARGS[1].ToUpper() -eq "Y" )
+{
+  $bRestart_service = $true  
+}
 
 #-------------------- Begin standard code --------------------
 #Include FunctionsFile
@@ -478,21 +489,24 @@ if ($Exec -eq 1)
             Write-Log "OK: Written outputfile: $strFile_Out has been renamed to: $strFileName_In"
             
             ##################################################################
-            # (5.D) Restart NRPE
+            # (5.D) Restart Centerity Monitor Agent       IF DESIRED
             ##################################################################
-            $strService="nrpe"
-            Restart-Service $strService -ErrorAction SilentlyContinue
-            $rc=$?
-            if ( $rc -eq $True )
-            {
-              Write-Log "OK: Succesfully restarted $strService service"
+            if ( $bRestart_service -eq $true )
+            {    
+              Write-Log "Attempting to restart $strService"         
+              $strService="Centerity Monitor Agent"
+              Restart-Service $strService -ErrorAction SilentlyContinue
+              $rc=$?
+              if ( $rc -eq $True )
+              {
+                Write-Log "OK: Succesfully restarted $strService service"
+              }
+              else  
+              {
+                Write-Log "ERR: Restart $strService service was unsuccesful !"
+                End-of-Job
+              }
             }
-            else  
-            {
-              Write-Log "ERR: Restart $strService service was unsuccesful !"
-              End-of-Job
-            }
-            
           }
           else
           {
