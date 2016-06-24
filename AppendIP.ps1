@@ -2,8 +2,8 @@
 # Name        : AppendIP.ps1
 # Purpose     : Concatenate an extra string containing IP-addresses / subnet bits to 
 #               an existing string that may only exist once in the file beeing changed       
-# Syntax      : ./AppendIP.ps1
-# Parms       : none
+# Syntax      : ./AppendIP.ps1 <@file beeing changed>
+# Parms       : @filename beeing changed ( including full path ) 
 # Dependancies: none
 # Files       : Inputfile is read and wil be renamed into inputfile-yyyymmdd-hhmmss
 #             : Outputfile is renamed to the new inputfilename finaly
@@ -13,6 +13,22 @@
 # Date        : 2016-06-01
 ############################################################################################# 
 Set-PSDebug -Trace 0
+
+########################################
+# Check and proces Parms. Parm muste be
+# @filename including full path
+########################################
+if ( $ARGS[0] -eq $null )
+{
+  Write-Host "No parameter supplied, syntax should be:"
+  Write-Host "./AppendIp.ps1 <@file-id>"
+  Exit
+}
+else	
+{
+  $strFile2bChanged=$ARGS[0]
+}
+
 
 #-------------------- Begin standard code --------------------
 #Include FunctionsFile
@@ -24,7 +40,7 @@ $OS       = (Get-WmiObject -Class Win32_OperatingSystem).Caption
 $Date     = Get-Date -format "dd-MM-yyyy"
 $FullDate = Get-Date
 
-Create Share for logging
+#Create Share for logging
 CreateShare
 
 ##########  Variables ##########
@@ -208,12 +224,12 @@ if ($Exec -eq 1)
   ##########
   # Init (1)
   ##########
+    
   $bDebug          = $False
   # $strPath         = "c:\Program Files\Centerity TESTBende"
-  $strPath         = "C:\Management\Programs\Centerity Monitor Agent"
   
-  $strFileName_In  = "NSC.ini"
-
+  $strPath         = Split-Path $strFile2bChanged         # "C:\Management\Programs\Centerity Monitor Agent"
+  $strFileName_In  = Split-Path $strFile2bChanged -Leaf   # "NSC.ini"
   $strFile_In      = "$strPath\$strFileName_In"
   
   $strFileName_Out = "output_file.txt"
@@ -250,7 +266,7 @@ if ($Exec -eq 1)
   #  ////////////////////////////////////////////////////////////////
 
   #Append this value to the existing string (if found) in the inputfile
-  $AppendIP       = "'145.222.96.0/24', '  145.222.97.0/24', '145.222.98.0/24', '145.222.99.0/24', '145.222.242.0/24', '145.222.243.0/24'"
+  $AppendIP       = "'145.222.96.0/24', '145.222.97.0/24', '145.222.98.0/24', '145.222.99.0/24', '145.222.242.0/24', '145.222.243.0/24'"
  
   #Makeup
   $strLogHead      = "=========================================================================================================="
@@ -497,9 +513,4 @@ if ($Exec -eq 1)
       }
     } 
   }
-  
-  ####################################################################################################
-  # Exit (6)
-  ####################################################################################################
-  End-of-Job
 }
