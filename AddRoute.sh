@@ -38,6 +38,7 @@ function Get-GW {
 
   echo ${GW}
 }
+
 ###################
 function Is-Good-IP {
 ###################
@@ -48,6 +49,97 @@ function Is-Good-IP {
     GOOD=true
   fi
   echo ${GOOD}
+}
+
+#####################
+function Is-Good-Mask {
+#####################
+ IP_NEW=$1
+  GOOD=false
+  if [[ ${IP_NEW} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]];
+  then
+    GOOD=true
+  fi
+  if [[ ${IP_NEW} =~ ^\/[0-3][0-9]$ ]];
+  then
+    GOOD=true
+  fi
+  echo ${GOOD}
+}
+
+########################
+function Do_route_active {
+########################
+  IP=$1
+  MASK=$2
+  bReturn=true
+
+  #When the first position of MASK is a slash(/) then we have to deal with
+  #a CIDR notation, and ${MASK}=>/22 or something will be
+  #compressed into the IP variabele, so
+  #IP  : 144.60.22.1
+  #MASK:/22
+  #IP <= 144.60.22.1/22
+  if [[ ${MASK} =~ ^\/[0-3][0-9]$ ]];
+  then
+    IP="${IP}${MASK}"
+  fi
+
+  ip route add ${IP} via ${GATEWAY}
+  if [[ $? -eq 0 ]];
+  then
+    Write-Log "OK: 'route add' successfully executed"
+  else
+    Write-Log "ERR: Executing the 'route add' command was unsuccessful !!"
+    bReturn=false
+  fi
+  echo ${bReturn}
+}
+
+###########################
+function Do_route_passive {
+###########################
+  IP=$1
+  MASK=$2
+  bReturn=true
+
+  #When the first position of MASK is a slash(/) then we have to deal with
+  #a CIDR notation, and ${MASK}=>/22 or something will be
+  #compressed into the IP variabele, so
+  #IP  : 144.60.22.1
+  #MASK:/22
+  #IP <= 144.60.22.1/22
+  if [[ ${MASK} =~ ^\/[0-3][0-9]$ ]];
+  then
+    IP="${IP}${MASK}"
+  fi
+
+  IP_EXIST=`grep ${IP_NEW} ${ETH}`
+  if [[ ${IP_EXIST} = "" ]];
+  then
+    ETH_SAVE="${ETH}_`date +%Y%m%d_%H%M%S`"
+    cp ${ETH} ${ETH_SAVE}
+    if [[ $? -ne 0 ]];
+    then
+      Write-Log "ERR: Kopie from ${ETH} to ${ETH_SAVE} was unsuccessful !!!"
+      bReturn = false
+    else
+      Write-Log "OK: Successfully copied ${ETH} to ${ETH_SAVE}"
+      echo "${IP} via ${GATEWAY}" >> ${ETH}
+      if [[ $? -eq 0 ]];
+      then
+        Write-Log "OK: Successfully appended new route to ${ETH}"
+        bReturn=true
+      else
+        Write-Log "ERR: Appending new route to ${ETH} was unsuccesful !!!"
+        bReturn=false
+      fi
+    fi
+  else
+    Write-Log "ERR: ${IP_NEW} already present in ${ETH}"
+    bReturn=false
+  fi
+  echo ${bReturn}
 }
 
 ###################
@@ -63,7 +155,7 @@ exit
 #################################
 #LOG
 #################################
-LOG_PATH="/home/a-pharpe/logs"
+LOG_PATH="/home/pharpe/logs"
 LOG_FILENAME="`hostname`_`basename "$0" | cut -d'.' -f1`_`date +%Y-%m-%d`.log"
 LOG_FILE=${LOG_PATH}/${LOG_FILENAME}
 
@@ -80,7 +172,9 @@ LOGHEAD="=======================================================================
 DESTINATION="145.222.58.0"
 
 DESTINATIONS_NEW="145.222.96.0 145.222.242.0"
-NETMASKS_NEW="255.255.252.0 255.255.254.0"
+# NETMASKS_NEW="255.255.252.0 255.255.254.0"
+NETMASKS_NEW="/22 /23"
+ROUTE_FILE="/etc/sysconfig/network-scripts/route-eth[0-9]"
 
 ##############
 # RUN
@@ -98,7 +192,8 @@ then
   # Create and check IP array
   IFS=' ' read -a DESTINATIONS_NEW_ARRAY <<< "${DESTINATIONS_NEW}"
   A_DEST_NEW_LEN=${#DESTINATIONS_NEW_ARRAY[@]}
-
+  
+  
   if [[ ${A_DEST_NEW_LEN} -eq 0 ]];
   then
     Write-Log "No new IP-address in inputstring"
@@ -131,10 +226,33 @@ then
     if [[ $(Is-Good-IP ${IP_NEW}) = true ]];
     then
       MASK_NEW=`echo ${NETMASKS_NEW_ARRAY[$A_DEST_NEW_IND]} | xargs`
-      if [[ $(Is-Good-IP ${MASK_NEW}) = true ]];
+      if [[ $(Is-Good-Mask ${MASK_NEW}) = true ]];
       then
-        # route add ${IP_NEW}<destination IP address> gw <gateway IP address>
-        Write-Log "Goede combi: ${IP_NEW} ${MASK_NEW}"
+        # Write-Log "Good combination: ${IP_NEW} ${MASK_NEW}"
+
+        # Now, find out in which "eth" file this gateway can be found
+        ETH=`grep -l ${GATEWAY} ${ROUTE_FILE}`
+        if [[ ${ETH} = "" ]];
+        then
+          Write-Log "ERR: ${GATEWAY} not found in any eth[0-9] file"
+        else
+          Write-Log "OK: ${GATEWAY} found in ${ETH}"
+          PASS_OK=$(Do_route_passive  ${IP_NEW} ${MASK_NEW})
+          if [[ ${PASS_OK} = true ]];
+          then
+            ACT_OK=$(Do_route_active ${IP_NEW} ${MASK_NEW})
+            if [[ ${ACT_OK} = true ]];
+            then
+              Write-Log "OK: Active route successfully added"
+            else
+
+              Write-Log "ERR: Adding active route was unsuccessful !"
+            fi
+          else
+            Write-Log "ERR: Adding passive route was unsuccessful !"
+          fi
+        fi
+
       else
         Write-Log "Subnet ${MASK_NEW} is not a valid mask !"
         End-of-Job
