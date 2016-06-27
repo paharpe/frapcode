@@ -6,6 +6,8 @@
 #               is programmatically determined and selected
 #               New IP addresses should be defined at the Init section in var: DESTINATIONS_NEW
 #                                  and the corresponding NetworkMasks  in var: NETMASKS_NEW
+#               Subnetmask may be specified in either: xxx.xxx.xxx.xxx or CIDR /xx format
+#
 # Syntax      : ./addRoute.sh
 #
 # Parms       : none
