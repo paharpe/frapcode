@@ -267,19 +267,7 @@ if ($Exec -eq 1)
     DeleteShare
     Exit
   }
-  
-  ################
-  # Checks Cntd...
-  ################
-
-  #Windows 2003 ?
-  if ( ! $OS.Contains($OSVer) )
-  {
-    Write-Log "This server is not equiped with Windows $OSVer" 
-    End-Of-Job  
-  }
-  
-  
+ 
   #######################################################
   # Logfile (3)
   #######################################################
@@ -287,6 +275,16 @@ if ($Exec -eq 1)
   # $strLogFile = "$strPath\$strLogBase$intLogSeq$strLogExt"
   #PROD
   $strLogFile ="B:\scripts\log\$strLogBase$strLogExt"
+  
+  ################
+  # Checks Cntd...
+  ################
+  #Windows 2003 ?
+  if ( ! $OS.Contains($OSVer) )
+  {
+    Write-Log "This server is not equiped with Windows $OSVer" 
+    End-Of-Job  
+  }
   
   ####################################################################################################
   # Run (4)
