@@ -214,6 +214,17 @@ if ($Exec -eq 1)
   ##########
   # Logfile 
   ##########
+  #Compose logfile: $strLogBase$Date$strLogExt
+  #1) $strMyName will made equal to the scriptname, for example: AppendIP
+  #2) after including $strLogBase log will be then: AppendIP-
+  #3) after including $Date       log will be then: AppendIP-22-03-2016  
+  #4) after including $strLogExt  log will be then: AppendIP-22-03-2016.log 
+ 
+  #Get filename of this script, the first part of the logfile will be made the equal to this.
+  $strMyName   = $MyInvocation.MyCommand.Name.Split(".")[0] #Get filename of this script in order to compose a logfilename
+  $strLogBase  = $strMyName + "-" + $Date
+  $strLogExt   = ".log"
+  
   $strLogFile ="B:\scripts\log\$strLogBase$strLogExt"
   
   $bDebug          = $False
@@ -232,17 +243,6 @@ if ($Exec -eq 1)
   
   $strFileName_Out = "output_file.txt"
   $strFile_Out     = "$strPath\$strFileName_Out"
-  
-  #Compose logfile: $strLogBase$Date$strLogExt
-  #1) $strMyName will made equal to the scriptname, for example: AppendIP
-  #2) after including $strLogBase log will be then: AppendIP-
-  #3) after including $Date       log will be then: AppendIP-22-03-2016  
-  #4) after including $strLogExt  log will be then: AppendIP-22-03-2016.log 
- 
-  #Get filename of this script, the first part of the logfile will be made the equal to this.
-  $strMyName   = $MyInvocation.MyCommand.Name.Split(".")[0] #Get filename of this script in order to compose a logfilename
-  $strLogBase  = $strMyName + "-" + $Date
-  $strLogExt   = ".log"
   
   #Search for this value in the inputfile
   $strTarget       = "allowed_hosts="
