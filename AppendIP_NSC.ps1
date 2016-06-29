@@ -193,7 +193,7 @@ Function Build_Append_New([string] $strExist_IP, [string] $strNew_IP)
   {
     if ( $IP -ne $null )
     {
-      $AppendIP_new = $AppendIP_new + ", " + $IP+ "/"+$AppendIPingIPVals.Mask[$intIndex]
+      $AppendIP_new = $AppendIP_new + "," + $IP+ "/"+$AppendIPingIPVals.Mask[$intIndex]
     }
     $intIndex++;
   }
