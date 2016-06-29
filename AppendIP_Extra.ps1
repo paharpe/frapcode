@@ -14,7 +14,6 @@
 ############################################################################################# 
 Set-PSDebug -Trace 0
 
-$strFile2bChanged="C:\Management\Programs\Centerity Monitor Agent\Custom\extra_settings.ini"
 $bRestart_service = $false  
 
 #-------------------- Begin standard code --------------------
@@ -32,9 +31,9 @@ CreateShare
 
 ##########  Variables ##########
 #Filter on servername: yes, no, When using multple server use comma "Server1"","Server2"
-$SrvFlt = "yes"
+$SrvFlt = "no"
 #TND $SrvLst = @("SW44Z0005","SW44R0026","SW44R0025","SW44R0027","SW44R0100","SW44R0110","SW44R0111")
-$SrvLst = @("SW44Z0005")
+# $SrvLst = @("SW44Z0005")
 #ACC $SrvLst = @("SW44Z0004","SW44R0028","SW44R0033","SW44R0034","SW44R0035","SW44R0036","SW44R0037","SW44R0038","SW44R0039","SW44R0040","SW44R0055","SW44R0060","SW44R0068","SW44R0089","SW44R0117","SW44R0118","SW44R0119","SW44R0139","SW44R0099","SW44R0108","SW44R0109")
 #PRD $SrvLst = @("SW44Z0003","SW44Z0006","SW44Z0008","SW44R0057","SW44R0012","SW44R0016","SW44R0017","SW44R0018","SW44R0019","SW44R0020","SW44R0021","SW44R0022","SW44R0023","SW44R0054","SW44R0061","SW44R0087","SW44R0090","SW44R0112","SW44R0113","SW44R0114","SW44R0115","SW44R0116","SW44R0138","SW44R0098","SW44R0104","SW44R0107")
 $OSVer  = "2003"
@@ -211,12 +210,25 @@ if ($Exec -eq 1)
   ##########
   # Init (1)
   ##########
-    
+  
   $bDebug          = $False
   # $strPath         = "c:\Program Files\Centerity TESTBende"
+
+  ##########
+  # Logfile 
+  ##########
+  $strLogFile ="B:\scripts\log\$strLogBase$strLogExt"
   
-  $strPath         = Split-Path $strFile2bChanged         # "C:\Management\Programs\Centerity Monitor Agent"
-  $strFileName_In  = Split-Path $strFile2bChanged -Leaf   # "NSC.ini"
+  ###########################################################
+  # Check inputfile and get the directory where it is located
+  ###########################################################
+  $strFileName_In = "extra_settings.ini"
+  $strPath=Get-ChildItem C:\ -Filter $strFileName_In -Recurse | % { $_.DirectoryName }
+  if ( $strPath -eq $null )
+  {
+    Write-Log "Inputfile $strFileName_In or directory not found"
+	Exit
+  } 
   $strFile_In      = "$strPath\$strFileName_In"
   
   $strFileName_Out = "output_file.txt"
@@ -268,14 +280,7 @@ if ($Exec -eq 1)
     Exit
   }
   
-  #######################################################
-  # Logfile (3)
-  #######################################################
-  #TEST 
-  # $strLogFile = "$strPath\$strLogBase$intLogSeq$strLogExt"
-  #PROD
-  $strLogFile ="B:\scripts\log\$strLogBase$strLogExt"
-
+  
   
   ################
   # Checks Cntd...
@@ -286,7 +291,7 @@ if ($Exec -eq 1)
     Write-Log "This server is not equiped with Windows $OSVer" 
     End-Of-Job  
   }
-
+  
   ####################################################################################################
   # Run (4)
   ####################################################################################################
