@@ -62,6 +62,31 @@ function End-of-Job {
   exit
 }
 
+########################
+function Restart-Process {
+########################
+GOOD=false
+OK=`service nrpe restart | grep  "OK" | grep "Starting" | wc -l`
+if [[ $OK -eq 1  ]];
+then
+  GOOD=true
+fi
+
+echo ${GOOD}
+}
+
+##############################################
+# Requirements
+###############################################
+I="$(tr [A-Z] [a-z] <<< "`whoami`")"
+ROOT="$(tr [A-Z] [a-z] <<< "RoOt")"
+
+if [[ ${I} != ${ROOT} ]]
+then
+  echo "You have to be user 'root' to execute this script !"
+  exit
+fi
+
 ###############################################
 # INIT
 ###############################################
@@ -195,6 +220,12 @@ else
         if [[ $? -eq 0 ]];
         then
           Write-Log "Succesfully renamed ${FLATIN_FILE_TEMP} to ${FLATIN_FILE}"
+          if [[ $(Restart-Process) = true ]];
+          then
+            Write-Log "Succesfully restarted NRPE"
+          else
+            Write-Log "NRPE restart was unsuccesful !"
+          fi
         else
           Write-Log "Rename changed file to working version NOT successful !"
         fi
