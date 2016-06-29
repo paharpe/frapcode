@@ -286,7 +286,7 @@ if ($Exec -eq 1)
   #TEST 
   # $strLogFile = "$strPath\$strLogBase$intLogSeq$strLogExt"
   #PROD
-  $strLogFile ="B:\scripts\log\$strLogBase$Date$strLogExt"
+  $strLogFile ="B:\scripts\log\$strLogBase$strLogExt"
   
   ####################################################################################################
   # Run (4)
