@@ -1,10 +1,11 @@
-#!/bin/bash
+##!/bin/bash
 
 ###############################################################################################
 # Name        : AppendIP.sh
 # Purpose     : Concatenate an additional string containing IP-addresses to an existing string
 #               in $FLATIN_FILE
 # Syntax      : ./AppendIP.sh
+# Note        : should be executed as 'root'
 # Parms       : none
 # Dependancies: none
 # Files       : Inputfile is read and wil be renamed to save version: inputfile_yyyymmdd_hhmmss
@@ -45,7 +46,7 @@ function Is-Good-IP {
 ###################
   IP_NEW=$1
   GOOD=false
-  if [[  ${IP_NEW} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]];
+  if [[ ${IP_NEW} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]];
   then
     GOOD=true
   fi
@@ -65,14 +66,13 @@ function End-of-Job {
 ########################
 function Restart-Process {
 ########################
-GOOD=false
-OK=`service nrpe restart | grep  "OK" | grep "Starting" | wc -l`
-if [[ $OK -eq 1  ]];
-then
-  GOOD=true
-fi
-
-echo ${GOOD}
+  GOOD=false
+  OK=`service nrpe restart | grep  "OK" | grep "Starting" | wc -l`
+  if [[ $OK -eq 1  ]];
+  then
+    GOOD=true
+  fi
+  echo ${GOOD}
 }
 
 ##############################################
@@ -87,14 +87,16 @@ then
   exit
 fi
 
-###############################################
+
+
+##############################################
 # INIT
 ###############################################
 
 ################################
 #LOG
 #################################
-LOG_PATH="/home/a-pharpe/logs"
+LOG_PATH="/tmp"
 LOG_FILENAME="`hostname`_`basename "$0" | cut -d'.' -f1`_`date +%Y-%m-%d`.log"
 LOG_FILE=${LOG_PATH}/${LOG_FILENAME}
 
@@ -111,8 +113,9 @@ NOW_FULL=`date +%Y-%m-%d' '%H:%M:%S`
 
 #PROD
 #FLATIN_PATH="/usr/local/nagios/etc"
+
 #TEST
-FLATIN_PATH="/home/a-pharpe/data"
+FLATIN_PATH="/home/pharpe/data"
 
 FLATIN_FILENAME="nrpe.cfg"
 FLATIN_FILE=${FLATIN_PATH}/${FLATIN_FILENAME}
@@ -125,7 +128,7 @@ FLATIN_FILE_SAVE="${FLATIN_FILE}_`date +%Y%m%d_%H%M%S`"
 LOGHEAD="========================================================================"
 
 TARGET="allowed_hosts"
-APPEND="145.222.242.160,145.222.242.161,145.222.242.162,145.222.242.163,145.222.242.164,145.222.242.165,145.222.242.166,145.222.242.167,145.222.242.168,145.222.242.169,145.222.242.170,145.222.242.171,145.222.242.172,145.222.242.173,145.222.242.174,145.222.242.175,145.222.242.176,145.222.242.177,145.222.242.178,145.222.242.179,145.222.242.180,145.222.242.181,145.222.242.182,145.222.242.183,145.222.242.184,145.222.242.185,145.222.242.186,145.222.242.187,145.222.242.188,145.222.242.189,145.222.242.190,145.222.242.191,145.222.99.64,145.222.99.65,145.222.99.66,145.222.99.67,145.222.99.68,145.222.99.69,145.222.99.70,145.222.99.71,145.222.99.72,145.222.99.73,145.222.99.74,145.222.99.75,145.222.99.76,145.222.99.77,145.222.99.78,145.222.99.79,145.222.99.80,145.222.99.81,145.222.99.82,145.222.99.83,145.222.99.84,145.222.99.85,145.222.99.86,145.222.99.87,145.222.99.88,145.222.99.89,145.222.99.90,145.222.99.91,145.222.99.92,145.222.99.93,145.222.99.94,145.222.99.95,145.222.99.96,145.222.99.97,145.222.99.98,145.222.99.99,145.222.99.100,145.222.99.101,145.222.99.102,145.222.99.103,145.222.99.104,145.222.99.105,145.222.99.106,145.222.99.107,145.222.99.108,145.222.99.109,145.222.99.110,145.222.99.111,145.222.99.112,145.222.99.113,145.222.99.114,145.222.99.115,145.222.99.116,145.222.99.117,145.222.99.118,145.222.99.119,145.222.99.120,145.222.99.121,145.222.99.122,145.222.99.123,145.222.99.124,145.222.99.125,145.222.99.126,145.222.99.127,145.222.99.160,145.222.99.161,145.222.99.162,145.222.99.163,145.222.99.164,145.222.99.165,145.222.99.166,145.222.99.167,145.222.99.168,145.222.99.169,145.222.99.170,145.222.99.171,145.222.99.172,145.222.99.173,145.222.99.174,145.222.99.175,145.222.99.176,145.222.99.177,145.222.99.178,145.222.99.179,145.222.99.180,145.222.99.181,145.222.99.182,145.222.99.183,145.222.99.184,145.222.99.185,145.222.99.186,145.222.99.187,145.222.99.188,145.222.99.189,145.222.99.190,145.222.99.191"
+APPEND="145.222.96.0/24,145.222.97.0/24,145.222.98.0/24,145.222.99.0/24,145.222.242.0/24,145.222.243.0/24"
 
 #############################################
 # START
@@ -133,6 +136,7 @@ APPEND="145.222.242.160,145.222.242.161,145.222.242.162,145.222.242.163,145.222.
 Write-Log ${LOGHEAD}
 Write-Log "Start run"
 Write-Log ${LOGHEAD}
+
 
 ##############################################
 # CHECK
@@ -158,7 +162,6 @@ then
   End-of-Job
 fi
 
-
 ##########################
 # PUT new IP's in an array
 ##########################
@@ -179,7 +182,8 @@ else
   for (( A_NEW_IND=0; A_NEW_IND<${A_NEW_LEN}; A_NEW_IND++ ));
   do
     IP_NEW=`echo ${IPS_NEW_ARRAY[$A_NEW_IND]} | xargs`
-    if [[ $(Is-Good-IP ${IP_NEW}) = true ]];
+    IP_NEW_CHECK=`echo ${IP_NEW} | cut -d'/' -f1`  # Cut of the /CIDR
+    if [[ $(Is-Good-IP ${IP_NEW_CHECK}) = true ]];
     then
       # echo "${A_NEW_IND}  ${IP_NEW}"
       if [[ $(Exist-IP ${IP_NEW}) = true ]];
@@ -191,7 +195,7 @@ else
         APPEND_NEW="${APPEND_NEW},${IP_NEW}"
       fi
     else
-      Write-Log "${IP_NEW} is not a correct IP-address !"
+      Write-Log "${IP_NEW_CHECK} is not a correct IP-address !"
       End-of-Job
     fi
   done
@@ -201,12 +205,12 @@ else
     # Nothing new !
     Write-Log "All new IP addresses already exist !"
   else
-    # echo "The new to append string is:  ${APPEND_NEW}"
+    echo "The new to append string is:  ${APPEND_NEW}"
     IPS_NEW_FULL="${IPS_NOW_FULL}${APPEND_NEW}"
-    # echo ${IPS_NEW_FULL}
 
     # Insert the changed string into the new ( temporary ) file
-    sed "s/${IPS_NOW_FULL}/${IPS_NEW_FULL}/g" "${FLATIN_FILE}" > ${FLATIN_FILE_TEMP}
+    # Since both target and append string may contain slashes (/) an # is used as a delimter here !
+    sed "s#${IPS_NOW_FULL}#${IPS_NEW_FULL}#g" "${FLATIN_FILE}" > ${FLATIN_FILE_TEMP}
     if [[ -s ${FLATIN_FILE_TEMP} ]];
     then
       Write-Log "Succesfully created ${FLATIN_FILE_TEMP}"
@@ -219,22 +223,22 @@ else
         mv ${FLATIN_FILE_TEMP} ${FLATIN_FILE}
         if [[ $? -eq 0 ]];
         then
-          Write-Log "Succesfully renamed ${FLATIN_FILE_TEMP} to ${FLATIN_FILE}"
-          if [[ $(Restart-Process) = true ]];
-          then
-            Write-Log "Succesfully restarted NRPE"
-          else
-            Write-Log "NRPE restart was unsuccesful !"
-          fi
+         Write-Log "Succesfully renamed ${FLATIN_FILE_TEMP} to ${FLATIN_FILE}"
+         if [[ $(Restart-Process) = true ]];
+         then
+           Write-Log "Succesfully restarted NRPE"
+         else
+           Write-Log "NRPE restart was unsuccesful !"
+         fi
         else
           Write-Log "Rename changed file to working version NOT successful !"
         fi
       else
         Write-Log "Rename working version to SAVE file NOT successful !"
       fi
- else
+    else
       Write-Log "Temporary file ${FLATIN_FILE_TEMP} contains no data !"
-    fi
+   fi
   fi
 fi
 
