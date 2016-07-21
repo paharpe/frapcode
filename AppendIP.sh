@@ -87,8 +87,6 @@ then
   exit
 fi
 
-
-
 ##############################################
 # INIT
 ###############################################
@@ -104,7 +102,6 @@ if [[ ! -d ${LOG_PATH} ]]; then
   echo "Logpath directory ${LOG_PATH} does not exist !"
   exit
 fi
-
 
 ################################
 #Input
