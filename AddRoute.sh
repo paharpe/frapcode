@@ -134,7 +134,7 @@ function Do_route_passive {
   IP_EXIST=`grep ${IP_NEW} ${ETH_FILE}`
   if [[ ${IP_EXIST} = "" ]];
   then
-    ETH_SAVE="${ETH_FILE}_`date +%Y%m%d_%H%M%S`"
+    ETH_SAVE="${ETH_FILE}_`date +%Y%m%d_%H%M%N`"
     cp ${ETH_FILE} ${ETH_SAVE}
     if [[ $? -ne 0 ]];
     then
