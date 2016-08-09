@@ -6,8 +6,6 @@
 #               is programmatically determined and selected
 #               New IP addresses should be defined at the Init section in var: DESTINATIONS_NEW
 #                                  and the corresponding NetworkMasks  in var: NETMASKS_NEW
-#               Subnetmask may be specified in either: xxx.xxx.xxx.xxx or CIDR /xx format
-#
 # Syntax      : ./addRoute.sh
 #
 # Parms       : none
@@ -39,6 +37,23 @@ function Get-GW {
   fi
 
   echo ${GW}
+}
+
+################
+function Get-eth {
+################
+  IP=$1
+  ETH=""
+  ETH=`netstat -nr | grep ^${IP} | xargs | cut -d' ' -f8`
+  if [[ ${ETH} = "" ]];
+  then
+    Write-Log "No ETH route table could be determined!"
+  else
+    Write-Log "Route table found: ${ETH}"
+  fi
+
+  echo ${ETH}
+
 }
 
 ###################
@@ -116,29 +131,29 @@ function Do_route_passive {
     IP="${IP}${MASK}"
   fi
 
-  IP_EXIST=`grep ${IP_NEW} ${ETH}`
+  IP_EXIST=`grep ${IP_NEW} ${ETH_FILE}`
   if [[ ${IP_EXIST} = "" ]];
   then
-    ETH_SAVE="${ETH}_`date +%Y%m%d_%H%M%S`"
-    cp ${ETH} ${ETH_SAVE}
+    ETH_SAVE="${ETH_FILE}_`date +%Y%m%d_%H%M%S`"
+    cp ${ETH_FILE} ${ETH_SAVE}
     if [[ $? -ne 0 ]];
     then
-      Write-Log "ERR: Kopie from ${ETH} to ${ETH_SAVE} was unsuccessful !!!"
-      bReturn = false
+      Write-Log "ERR: Kopie from ${ETH_FILE} to ${ETH_SAVE} was unsuccessful !!!"
+      bReturn=false
     else
-      Write-Log "OK: Successfully copied ${ETH} to ${ETH_SAVE}"
-      echo "${IP} via ${GATEWAY}" >> ${ETH}
+      Write-Log "OK: Successfully copied ${ETH_FILE} to ${ETH_SAVE}"
+      echo "${IP} via ${GATEWAY}" >> ${ETH_FILE}
       if [[ $? -eq 0 ]];
       then
-        Write-Log "OK: Successfully appended new route to ${ETH}"
+        Write-Log "OK: Successfully appended new route to ${ETH_FILE}"
         bReturn=true
       else
-        Write-Log "ERR: Appending new route to ${ETH} was unsuccesful !!!"
+        Write-Log "ERR: Appending new route to ${ETH_FILE} was unsuccesful !!!"
         bReturn=false
       fi
     fi
   else
-    Write-Log "ERR: ${IP_NEW} already present in ${ETH}"
+    Write-Log "ERR: ${IP_NEW} already present in ${ETH_FILE}"
     bReturn=false
   fi
   echo ${bReturn}
@@ -157,7 +172,8 @@ exit
 #################################
 #LOG
 #################################
-LOG_PATH="/home/pharpe/logs"
+# LOG_PATH="/home/pharpe/logs"
+LOG_PATH="/tmp"
 LOG_FILENAME="`hostname`_`basename "$0" | cut -d'.' -f1`_`date +%Y-%m-%d`.log"
 LOG_FILE=${LOG_PATH}/${LOG_FILENAME}
 
@@ -176,7 +192,7 @@ DESTINATION="145.222.58.0"
 DESTINATIONS_NEW="145.222.96.0 145.222.242.0"
 # NETMASKS_NEW="255.255.252.0 255.255.254.0"
 NETMASKS_NEW="/22 /23"
-ROUTE_FILE="/etc/sysconfig/network-scripts/route-eth[0-9]"
+ROUTE_FILE="/etc/sysconfig/network-scripts/route-"
 
 ##############
 # RUN
@@ -189,13 +205,30 @@ Write-Log ${LOGHEAD}
 #Get Gateway
 GATEWAY=$(Get-GW ${DESTINATION})
 
+###########################################################
+# Vervolgens moet het volgende opgenomen worden in de file
+# /etc/sysconfig/network-scripts/route-<mgt_interface>
+# waarbij <mgt_interface> de naam van de interface is waar
+# het beheer adres van de server op is geconfigureerd.
+###########################################################
+#Dit wordt uitgezocht via Get-Eth
+ETH=$(Get-eth ${DESTINATION})
+
+ETH_FILE="${ROUTE_FILE}${ETH}"
+if [[ -f ${ETH_FILE} ]];
+then
+  NOP=1
+else
+  Write-Log "${ETH_FILE} does not exist !"
+  End-of-Job
+fi
+
 if [[ ! ${GATEWAY} = "" ]];
 then
   # Create and check IP array
   IFS=' ' read -a DESTINATIONS_NEW_ARRAY <<< "${DESTINATIONS_NEW}"
   A_DEST_NEW_LEN=${#DESTINATIONS_NEW_ARRAY[@]}
-  
-  
+
   if [[ ${A_DEST_NEW_LEN} -eq 0 ]];
   then
     Write-Log "No new IP-address in inputstring"
@@ -232,13 +265,11 @@ then
       then
         # Write-Log "Good combination: ${IP_NEW} ${MASK_NEW}"
 
-        # Now, find out in which "eth" file this gateway can be found
-        ETH=`grep -l ${GATEWAY} ${ROUTE_FILE}`
-        if [[ ${ETH} = "" ]];
+        if [[ ${ETH_FILE} = "" ]];
         then
-          Write-Log "ERR: ${GATEWAY} not found in any eth[0-9] file"
+          Write-Log "ERR: EMPTY ${ETH_FILE} variable, should be checked earlier !"
         else
-          Write-Log "OK: ${GATEWAY} found in ${ETH}"
+          Write-Log "OK: ${GATEWAY} found in ${ETH_FILE}"
           PASS_OK=$(Do_route_passive  ${IP_NEW} ${MASK_NEW})
           if [[ ${PASS_OK} = true ]];
           then
@@ -247,7 +278,6 @@ then
             then
               Write-Log "OK: Active route successfully added"
             else
-
               Write-Log "ERR: Adding active route was unsuccessful !"
             fi
           else
