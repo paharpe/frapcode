@@ -109,10 +109,10 @@ fi
 NOW_FULL=`date +%Y-%m-%d' '%H:%M:%S`
 
 #PROD
-#FLATIN_PATH="/usr/local/nagios/etc"
+FLATIN_PATH="/usr/local/nagios/etc"
 
 #TEST
-FLATIN_PATH="/home/pharpe/data"
+# FLATIN_PATH="/home/pharpe/data"
 
 FLATIN_FILENAME="nrpe.cfg"
 FLATIN_FILE=${FLATIN_PATH}/${FLATIN_FILENAME}
