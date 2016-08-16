@@ -1,4 +1,4 @@
-##!/bin/bash
+#!/bin/bash
 ###########################################################################
 # Name: logclear.sh
 #
@@ -49,8 +49,6 @@ function Write-Debug {
     echo `date +%H:%M:%S`-${LOG_ROW} >> ${LOGFILE}
   fi
 }
-
-
 
 # Return # days since FILE was CHANGED
 ##############
