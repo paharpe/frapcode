@@ -1,11 +1,11 @@
-VERSION 5.00
+VVERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExport 
    Caption         =   "Export Outlook Items"
-   ClientHeight    =   4290
+   ClientHeight    =   5010
    ClientLeft      =   45
    ClientTop       =   375
-   ClientWidth     =   9585
-   OleObjectBlob   =   "OUTLOOK_frmExport.frx":0000
+   ClientWidth     =   5835
+   OleObjectBlob   =   "frmExport.frx":0000
    StartUpPosition =   1  'CenterOwner
 End
 Attribute VB_Name = "frmExport"
@@ -18,10 +18,18 @@ Dim myFolder As Outlook.MAPIFolder
 
 
 
+Private Sub cmdCancel_Click()
+Unload Me
+End Sub
+
 Private Sub cmdProcessFolder_Click()
-Open "C:\Users\pharpe\Documents\temp\Mails.txt" For Output As #1
+ 
+' Open "C:\Users\pharpe\Documents\temp\Mails.txt" For Output As #1
+Open txtOutput_val.Text For Output As #1
+
 Call ProcessFolder(myFolder)
 Close #1
+
 End Sub
 
 Private Sub cmdSelectFolder_Click()
@@ -117,9 +125,10 @@ txtFolder.Text = "Folder"
 txtFolder.Text = myFolder.Name
 
 If txtFolder.Text <> "Folder" Then
-  cmdProcessFolder.Enabled = True
+  If txtOutput_val.Text <> "" Then
+    cmdProcessFolder.Enabled = True
+  End If
 End If
-     
 'Call ProcessFolder(MyFolder)
 
 Set objNS = Nothing
@@ -132,109 +141,139 @@ End Sub
 Sub ProcessFolder(StartFolder As MAPIFolder)
 Dim objFolder As Outlook.MAPIFolder
 Dim objItem As Object
-Dim mai As MailItem
+
+Dim strDateTime_in As Variant
+Dim arDate_in As Variant
+       
+Dim strDate_in As String
+Dim strDate_out As String
+       
+Dim strDate_in_d As String
+Dim strDate_in_m As String
+Dim strDate_in_y As String
+       
+Dim strTime_in As String
+
 
 Dim intItem_Counter As Integer
 intItem_Counter = 0
-  ' On Error Resume Next
-  ' MsgBox StartFolder.Parent, , "testing"
+
+' On Error Resume Next
+' MsgBox StartFolder.Parent, , "testing"
     
-  ' txtStatus.Text = StartFolder.Name
-  frmExport.Repaint
+' txtStatus.Text = StartFolder.Name
+frmExport.Repaint
     
-  ' process all the items in this folder
-  For Each objItem In StartFolder.Items
-    If objItem.Sender <> "nagios-bld@kpn.com" Then
-       Dim strDateTime_in As Variant
-       Dim arDate_in As Variant
+' process all the items in this folder
+For Each objItem In StartFolder.Items
+  'Exclude non mail ( like Calendar ) items...
+  If TypeOf objItem Is MailItem Then
+    'Skip the empty ones as well..
+    If objItem <> "" Then
+      'No Logius/EBB stuff..
+      If objItem.Sender <> "nagios-bld@kpn.com" Then
        
-       Dim strDate_in As String
-       Dim strDate_out As String
+        strDateTime_in = Split(objItem.ReceivedTime, " ")
+        strDate_in = strDateTime_in(0)
        
-       Dim strDate_in_d As String
-       Dim strDate_in_m As String
-       Dim strDate_in_y As String
+        arDate_in = Split(strDate_in, "-")
        
-       Dim strTime_in As String
+        strDate_in_d = arDate_in(0)
+        If Val(strDate_in_d) < 10 Then
+          'Leading Zero
+          strDate_in_d = "0" & strDate_in_d
+        End If
+       
+        strDate_in_m = arDate_in(1)
+        If Val(strDate_in_m) < 10 Then
+          'Leading Zero
+          strDate_in_m = "0" & strDate_in_m
+        End If
        
        
-       strDateTime_in = Split(objItem.ReceivedTime, " ")
-       strDate_in = strDateTime_in(0)
+        strDate_in_y = arDate_in(2)
        
-       arDate_in = Split(strDate_in, "-")
+        strDate_out = strDate_in_y & "-" & strDate_in_m & "-" & strDate_in_d
        
-       strDate_in_d = arDate_in(0)
-       If Val(strDate_in_d) < 10 Then
-         strDate_in_d = "0" & strDate_in_d
+        If UBound(strDateTime_in) = 0 Then
+          strTime_in = "00:00:00"
+        Else
+          strTime_in = strDateTime_in(1)
        End If
+         
+       ' Print #1, objItem.Subject & " # " & strDate_out & " # " & strTime_in
+       ' Print #1, objItem.Body & " # " & strDate_out & " # " & strTime_in
+     
+       Dim arBody() As String
+       Dim strBody_Line As String
+       Dim intIndex As Integer
+       arBody() = Split(objItem.Body, ":")
        
-       strDate_in_m = arDate_in(1)
-       If Val(strDate_in_m) < 10 Then
-         strDate_in_m = "0" & strDate_in_m
-       End If
-       
-       
-       strDate_in_y = arDate_in(2)
-       
-       strDate_out = strDate_in_y & "-" & strDate_in_m & "-" & strDate_in_d
-       
-       If UBound(strDateTime_in) = 0 Then
-         strTime_in = "00:00:00"
-       Else
-         strTime_in = strDateTime_in(1)
+       For intIndex = 0 To UBound(arBody)
+         strBody_Line = Replace(arBody(intIndex), vbCrLf, "")
+         strBody_Line = LTrim(strBody_Line)
+         If Len(strBody_Line) < 1025 Then
+           Print #1, LTrim(strBody_Line) & " # " & strDate_out & " # " & strTime_in
+         End If
+       Next intIndex
+       Print #1, "-----------"
+     
+       intItem_Counter = intItem_Counter + 1
+       txtStatus.Text = "Aantal : " & intItem_Counter
+       DoEvents
      End If
-    ' Print #1, objItem.Subject & " # " & strDate_out & " # " & strTime_in
-     ' Print #1, objItem.Body & " # " & strDate_out & " # " & strTime_in
-     
-     Dim arBody() As String
-     Dim strBody_Line As String
-     Dim intIndex As Integer
-     arBody() = Split(objItem.Body, ":")
-     For intIndex = 0 To UBound(arBody)
-       strBody_Line = Replace(arBody(intIndex), vbCrLf, "")
-       strBody_Line = LTrim(strBody_Line)
-       If Len(strBody_Line) < 1025 Then
-       
-         Print #1, LTrim(strBody_Line) & " # " & strDate_out & " # " & strTime_in
-       End If
-     Next intIndex
-     Print #1, "-----------"
-     
-    intItem_Counter = intItem_Counter + 1
-    txtStatus.Text = "Aantal : " & intItem_Counter
-    DoEvents
     End If
-  Next
+  End If
+Next
         
-  MsgBox "Done, all selected items (" + CStr(intItem_Counter) + ") exported."
+MsgBox "Done, all selected items (" + CStr(intItem_Counter) + ") exported."
         
-  ' process all the subfolders of this folder
-  For Each objFolder In StartFolder.Folders
+' process all the subfolders of this folder
+For Each objFolder In StartFolder.Folders
+  Dim Answer As Variant
+  
+  Answer = MsgBox("Continue with subfolder " + objFolder.Name + " ?", vbYesNo + vbQuestion, "Just asking..")
+  If Answer = vbYes Then
+    txtFolder.Text = objFolder.Name
     Call ProcessFolder(objFolder)
-  Next
- 
-Set mai = Nothing
+  End If
+Next
+
 Set objFolder = Nothing
 Set objItem = Nothing
 txtStatus.Text = "Aantal : " & intItem_Counter
-End Sub
-
-Private Sub TextBox1_Change()
 
 End Sub
 
-Private Sub txtProgress_Change()
+Private Sub cmdTask_Click()
 
+txtOutput_val.Text = FileOpen("OUTPUT", txtOutput_val.Text)
 End Sub
 
-Private Sub txtStatus_Change()
-
-End Sub
-
-Private Sub UserForm_Click()
+Private Sub txtOutput_val_Change()
 
 End Sub
 
 Private Sub UserForm_Initialize()
 cmdProcessFolder.Enabled = False
 End Sub
+
+Private Function FileOpen(strFile_Code As String, strFile_Id As String) As String
+
+With dlgFileOpen
+  .DialogTitle = "Open " + VBA.LCase$(VBA.Trim(strFile_Code)) + ".csv"
+  .Filter = "Delimited Files (*.csv)|*.csv|All Files (*.*)|*.*"
+  .FileName = strFile_Id
+End With
+
+dlgFileOpen.ShowOpen
+
+Select Case VBA.UCase$(VBA.Trim(strFile_Code))
+  Case "TASK"
+  Case "RULE"
+  Case "TICKETS"
+End Select
+
+FileOpen = dlgFileOpen.FileName
+
+End Function
