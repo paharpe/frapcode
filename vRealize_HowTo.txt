@@ -1,0 +1,79 @@
+*******************************************************************
+                           Vrealize
+*******************************************************************
+
+
+*********************** W E B P A G E *****************************
+1) goto: https://ssp.kpnnl.local/
+
+2) Logon using the "GitHup" credentials ( see Keepass )
+
+
+
+*********************** G U I *****************************
+1) goto: Catalogus => Gemeente Amsterdam Amsterdam 
+                               OF                            ---> VOORLOPIG AMSTERDAM KIEZEN
+                      Gemeente Amsterdam Apeldoorn
+
+2) Creating a RedHat machine:
+   Kies: M-RedHat7.2 AMS 444
+
+3) Click the "Aanvraag" button
+
+
+
+NETWERKEN:
+1e combobox:          = DC3-M(anagement)-MGS2-NLAMS1
+2e combobox:
+   Publieke Zone      = 444-F(rondend)-L31-NLAMS1
+   Gemeentelijke Zone = 444-F(rontend)-L32-NLAMS1
+3e combobox:          = DC3-M-B(ackup)US2-NLAMS1
+
+HARDDISKS:
+Maximum capacity = 50GB, if more capacity is needed, add disk(s)
+
+PUPPET:
+PE00024prd.tooling.kpn.org
+
+ALTERNATE WORKFLOW:
+use NO  when requesting a Windows's machine
+reply YES when processing a Linux's VM request 
+
+
+
+************************ P O S T P R O C E S S I N G *****************************
+01) At the new host, add Route:
+    execute: ip route add 145.222.99.39/32 (is the puppetmaster IP) via 10.183.128.1 ( is the beheergateway, value may differ: Apeldoorn / Amsterdam )  
+
+02) execute: mkdir -p /opt/puppetlabs/server/data/puppetserver/selinux
+
+03) execute: wget  http://145.222.132.213/pub/RPM-GPG-KEY-EPEL-7
+
+04) execute: rpm --import RPM-GPG-KEY-EPEL-7
+
+05) goto: Linux opstapserver: dcmosmz034
+
+06) goto: /home/a-pharpe/roll-out-scripts/agent/install
+
+07) execute: sh deploy_puppet_agent.sh -c team-024 -u a-pharpe -e @env ( in this case: production ) @new_host ( in this case: su444v1025 )
+             Note..: the -e value may differ ( can be development/production ) !!!
+    
+08) accept Certificate
+    on DCM goto: https://pe00024prd.tooling.kpn.org => Nodes => Unsigned => look for @new_host => Accept
+
+09) At the new host, generate: /etc/facter/facts.d/kpn.yaml with the following contents:
+    ---
+    customer_name: gemeente_amsterdam 
+    customer_environment: development / production
+    application_role: initial 
+    application_name: initial 
+    application_instance: 1 
+    datacenter: nlams1 
+    greenfield: true
+ 
+    Note..: the "environment" and "datacenter" values may differ !!!
+
+10) do 3
+      execute: puppet agent -t
+      wait for completion
+    doend
