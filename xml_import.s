@@ -1,5 +1,5 @@
 #!/bin/bash
-#################################################################################
+####################################################################################
 # Name: xml_import.s
 #
 # Uses: xml_import.e
@@ -16,15 +16,16 @@
 # Date: October 2016 (PH)
 #
 # Changes:
-# - Instead of moving the XML file and the \Images directory they are copies now
+# - Instead of moving the XML file and the \Images directory they are copied now
 #   leaving the contents of the FTP directory in place. (PH, 20161027)
 #
 # - Inserted code to cleanup my own logfiles older than <@env> days (PH,20161031)
-##################################################################################
+# - Added code to maintain only 1 version of file 'import.php?auto=true'(PH,20161109)
+#####################################################################################
 # set -x
 SCRIPT=`basename $0`
 SCRIPTNAME=`echo ${SCRIPT} | cut -d'.' -f1`
-
+　
 v_dir=$(dirname $0)/.
 if [[ -f ${v_dir}/${SCRIPTNAME}.e ]];
 then
@@ -36,7 +37,7 @@ else
   echo "${SCRIPT}: environmentfile is missing !"
   exit
 fi
-
+　
 ##############################################
 # root ??
 ##############################################
@@ -45,8 +46,8 @@ then
    echo "${SCRIPT}: should be ran by user root"
    exit
 fi
-
-
+　
+　
 ##############################################
 # Check paths
 ##############################################
@@ -58,7 +59,7 @@ then
   echo "${SCRIPT}: logdirectory ${AMIS_IMPORT_LOG_PATH} does not exist !"
   exit
 fi
-
+　
  
 if [[ ! -d ${AMIS_FTP_PATH} ]];
 then
@@ -70,8 +71,8 @@ then
   echo "${SCRIPT}: FTP import directory ${AMIS_FTP_PATH} does not exist !"
   exit
 fi
-
-
+　
+　
 if [[ ! -d ${AMIS_IMPORT_PATH} ]];
 then
   #********************************
@@ -82,13 +83,12 @@ then
   echo "${SCRIPT}: php import directory ${AMIS_IMPORT_PATH} does not exist !"
   exit
 fi
-
-
-
+　
+　
 ##############################################
 # Functions
 ##############################################
-
+　
 ###################
 function Write_Log {
 ###################
@@ -100,8 +100,8 @@ function Write_Log {
     echo `date +%H:%M:%S`-${LOG_ROW} >> ${LOGFILE}
   fi
 }
-
-
+　
+　
 ####################
 function Check_Input {
 ####################
@@ -113,21 +113,17 @@ function Check_Input {
   fi
   echo ${RC}
 }
-
-
+　
+　
 ##################
 function Load_Data {
 ##################
-  # The 'real' wget still has to be coded here. 
-  # At this moment it's a Write-Log since a refresh is not yet
-  # allowed 
-  # "wget ${XML_URL}"
   wget --no-check-certificate ${AMIS_IMPORT_URL} 
   RC=$?
   echo ${RC}
 }
-
-
+　
+　
 ###################
 function Write_Head {
 ###################
@@ -135,8 +131,8 @@ function Write_Head {
   Write_Log "Start ${SCRIPT}"
   Write_Log "**********************************************"
 }
-
-
+　
+　
 ###################
 function Write_Tail {
 ###################
@@ -145,11 +141,11 @@ function Write_Tail {
   Write_Log "**********************************************"
   Write_Log "<SPACE>"
 } 
-
-
-########################
-function Delete_Old_Logs {
-########################
+　
+　
+############################
+function Delete_Old_Run_Logs {
+############################
   OLDLOGS_TOT=`find ${AMIS_IMPORT_LOG_PATH} -mtime +${AMIS_IMPORT_LOG_MAX_AGE} | wc -l`
   OLDLOGS=`find ${AMIS_IMPORT_LOG_PATH} -mtime +${AMIS_IMPORT_LOG_MAX_AGE}`
   Write_Log "Cleaning up logfiles.."
@@ -162,34 +158,54 @@ function Delete_Old_Logs {
     do
       Write_Log "Deleting: "${OLDLOG}
       rm -f ${OLDLOG}
+      RC=$?
+      if [[ ! ${RC} -eq 0 ]];
+      then
+        Write_Log "Warning: ${RC} occurred while removing ${OLDLOG} !"
+      fi
     done
   fi
   Write_Log "<SPACE>"
 }
-
-
+　
+　
+###############################
+function Move_Previous_HTML_Log {
+###############################
+# Every run causes a 'import.php?auto=true' file to be created in directory '/boot'
+# That's why a series of 'import.php?auto=true.0', 'import.php?auto=true.1' .. 'import.php?auto=true.n'
+# was developing over a couple of rundays
+# Underneath code moves and overwrites 'import.php?auto=true' from '/boot' to '/var/log/amis'   
+# This is how we maintain only 2 versions:
+# - Yesterdays HTML log in /var/log amis AND
+# - The current (last) in /root
+  find ${AMIS_IMPORT_HTML_LOG_PATH} -name ${AMIS_IMPORT_HTML_FILE} -exec mv -t ${AMIS_IMPORT_LOG_PATH}/ {} \+
+}
+　
+　
 ##########
 # Init
 ##########
 TODAY=`date +%Y%m%d`
 LOGFILE="${AMIS_IMPORT_LOG_PATH}/${AMIS_IMPORT_LOG_FNAME}${TODAY}${AMIS_IMPORT_LOG_EXT}"
-
+　
 # Write logheader
 Write_Head
-
-# Remove old logfile(s)
-Delete_Old_Logs
+　
+# Take care of old logfile(s)
+Delete_Old_Run_Logs
+Move_Previous_HTML_Log
  
-
+　
 ###############################################################
 # Mainline
 ###############################################################
 # The full XML name location
 AMIS_IMPORT_XML=${AMIS_FTP_PATH}/${AMIS_IMPORT_XML_FILE}
-
+　
 # The full /Imagages name and location
 AMIS_IMPORT_IMAGES=${AMIS_FTP_PATH}/${AMIS_IMPORT_IMAGES_DIR}
-
+　
 # Do we have the required input objects ?
 if [[ $(Check_Input "${AMIS_IMPORT_XML}") -ne 0 ]];
 then
@@ -204,17 +220,17 @@ else
     exit
   fi
 fi
-
-
+　
+　
 # ****************************************************************
 # OK, XML file and /Images directory are present, lets continue...
 # ****************************************************************
 # Count XML lines and Images
 LINES=`cat ${AMIS_IMPORT_XML} | wc -l`
 IMAGES=`ls -l ${AMIS_IMPORT_IMAGES} | wc -l`
-
+　
 Write_Log "OK: both XML file and /Images directory are present containing ${LINES} XML-lines and ${IMAGES} images"
-
+　
 # Now copy the input from the FTP location to the location php expects it..
 cp -p -f ${AMIS_IMPORT_XML} ${AMIS_IMPORT_PATH}
 RC=$?
@@ -224,7 +240,7 @@ then
   Write_Tail
   exit
 fi
-
+　
 # Now we have todo some extra stuff to move the Images directory and
 # its contents to to PHP location:
 # 1: Does the "/Images" subdir exist ?
@@ -271,9 +287,9 @@ else
   Write_Tail
   exit
 fi
-
+　
 Write_Log "OK: both XML file and the /Images directory are copied from FTP to PHP location"
-
+　
 # ****************
 # Start the IMPORT
 # ****************
@@ -283,5 +299,6 @@ then
 else
   Write_Log "Error: Import failed !"
 fi
-
+　
 Write_Tail
+　
