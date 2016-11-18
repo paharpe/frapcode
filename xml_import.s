@@ -16,11 +16,11 @@
 # Date: October 2016 (PH)
 #
 # Changes:
-# - Instead of moving the XML file and the \Images directory they are copied now
-#   leaving the contents of the FTP directory in place. (PH, 20161027)
-#
-# - Inserted code to cleanup my own logfiles older than <@env> days (PH,20161031)
+# - Instead of moving the XML file and the \Images directory they are
+#   copied now leaving the contents of the FTP directory in place.      (PH,20161027)
+# - Inserted code to cleanup my own logfiles older than <@env> days     (PH,20161031)
 # - Added code to maintain only 1 version of file 'import.php?auto=true'(PH,20161109)
+# - Count contents of ../Images dir now using `ls` instead of `ls -l`   (PH,20161118)
 #####################################################################################
 # set -x
 SCRIPT=`basename $0`
@@ -227,7 +227,7 @@ fi
 # ****************************************************************
 # Count XML lines and Images
 LINES=`cat ${AMIS_IMPORT_XML} | wc -l`
-IMAGES=`ls -l ${AMIS_IMPORT_IMAGES} | wc -l`
+IMAGES=`ls ${AMIS_IMPORT_IMAGES} | wc -l`
 　
 Write_Log "OK: both XML file and /Images directory are present containing ${LINES} XML-lines and ${IMAGES} images"
 　
