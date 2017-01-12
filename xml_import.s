@@ -8,7 +8,7 @@
 #
 # How : 
 #   1) Check for (new) XML-file and /Images directory in FTP dir. Third party
-#      should deliver a new set every night.
+#      should deliver a whole new set or additions to /Images every night.
 #   2) Move the XML-file and /Images directory to the location the php scripts
 #      are expecting their stuff..
 #   3) Issue a wget command to trigger the data import
@@ -16,16 +16,18 @@
 # Date: October 2016 (PH)
 #
 # Changes:
-# - Instead of moving the XML file and the \Images directory they are
-#   copied now leaving the contents of the FTP directory in place.      (PH,20161027)
-# - Inserted code to cleanup my own logfiles older than <@env> days     (PH,20161031)
+# - Instead of moving the XML file and the \Images directory they are 
+#   copied now leaving the contents of the FTP directory in place.      (PH,20161027)
+# - Inserted code to cleanup my own logfiles older than <@env> days     (PH,20161031)
 # - Added code to maintain only 1 version of file 'import.php?auto=true'(PH,20161109)
-# - Count contents of ../Images dir now using `ls` instead of `ls -l`   (PH,20161118)
+# - Count contents of ../Images dir now using `ls` instead of `ls -l`   (PH,20161118)
+# - Added --timeout=0 option to 'wget' commandstring			(PH,20161123)	
+# - Removed --timeout=0 option to 'wget' commandstring                  (PH,20170112)
 #####################################################################################
 # set -x
 SCRIPT=`basename $0`
 SCRIPTNAME=`echo ${SCRIPT} | cut -d'.' -f1`
-　
+
 v_dir=$(dirname $0)/.
 if [[ -f ${v_dir}/${SCRIPTNAME}.e ]];
 then
@@ -37,7 +39,7 @@ else
   echo "${SCRIPT}: environmentfile is missing !"
   exit
 fi
-　
+
 ##############################################
 # root ??
 ##############################################
@@ -46,8 +48,8 @@ then
    echo "${SCRIPT}: should be ran by user root"
    exit
 fi
-　
-　
+
+
 ##############################################
 # Check paths
 ##############################################
@@ -59,7 +61,7 @@ then
   echo "${SCRIPT}: logdirectory ${AMIS_IMPORT_LOG_PATH} does not exist !"
   exit
 fi
-　
+
  
 if [[ ! -d ${AMIS_FTP_PATH} ]];
 then
@@ -71,8 +73,8 @@ then
   echo "${SCRIPT}: FTP import directory ${AMIS_FTP_PATH} does not exist !"
   exit
 fi
-　
-　
+
+
 if [[ ! -d ${AMIS_IMPORT_PATH} ]];
 then
   #********************************
@@ -83,12 +85,12 @@ then
   echo "${SCRIPT}: php import directory ${AMIS_IMPORT_PATH} does not exist !"
   exit
 fi
-　
-　
+
+
 ##############################################
 # Functions
 ##############################################
-　
+
 ###################
 function Write_Log {
 ###################
@@ -100,8 +102,8 @@ function Write_Log {
     echo `date +%H:%M:%S`-${LOG_ROW} >> ${LOGFILE}
   fi
 }
-　
-　
+
+
 ####################
 function Check_Input {
 ####################
@@ -113,17 +115,28 @@ function Check_Input {
   fi
   echo ${RC}
 }
-　
-　
+
+
 ##################
 function Load_Data {
 ##################
-  wget --no-check-certificate ${AMIS_IMPORT_URL} 
+  # Wget may return one of several error codes if it encounters problems. 
+  # - 0 No problems occurred. 
+  # - 1 Generic error code. 
+  # - 2 Parse error—for instance, when parsing command-line options, the ‘.wgetrc’ or ‘.netrc’... 
+  # - 3 File I/O error. 
+  # - 4 Network failure. 
+  # - 5 SSL verification failure. 
+  # - 6 Username/password authentication failure. 
+  # - 7 Protocol errors. 
+  # - 8 Server issued an error response
+
+  wget --no-check-certificate ${AMIS_IMPORT_URL} 
   RC=$?
   echo ${RC}
 }
-　
-　
+
+
 ###################
 function Write_Head {
 ###################
@@ -131,8 +144,8 @@ function Write_Head {
   Write_Log "Start ${SCRIPT}"
   Write_Log "**********************************************"
 }
-　
-　
+
+
 ###################
 function Write_Tail {
 ###################
@@ -141,8 +154,8 @@ function Write_Tail {
   Write_Log "**********************************************"
   Write_Log "<SPACE>"
 } 
-　
-　
+
+
 ############################
 function Delete_Old_Run_Logs {
 ############################
@@ -167,8 +180,8 @@ function Delete_Old_Run_Logs {
   fi
   Write_Log "<SPACE>"
 }
-　
-　
+
+
 ###############################
 function Move_Previous_HTML_Log {
 ###############################
@@ -181,31 +194,31 @@ function Move_Previous_HTML_Log {
 # - The current (last) in /root
   find ${AMIS_IMPORT_HTML_LOG_PATH} -name ${AMIS_IMPORT_HTML_FILE} -exec mv -t ${AMIS_IMPORT_LOG_PATH}/ {} \+
 }
-　
-　
+
+
 ##########
 # Init
 ##########
 TODAY=`date +%Y%m%d`
 LOGFILE="${AMIS_IMPORT_LOG_PATH}/${AMIS_IMPORT_LOG_FNAME}${TODAY}${AMIS_IMPORT_LOG_EXT}"
-　
+
 # Write logheader
 Write_Head
-　
+
 # Take care of old logfile(s)
 Delete_Old_Run_Logs
 Move_Previous_HTML_Log
  
-　
+
 ###############################################################
 # Mainline
 ###############################################################
 # The full XML name location
 AMIS_IMPORT_XML=${AMIS_FTP_PATH}/${AMIS_IMPORT_XML_FILE}
-　
+
 # The full /Imagages name and location
 AMIS_IMPORT_IMAGES=${AMIS_FTP_PATH}/${AMIS_IMPORT_IMAGES_DIR}
-　
+
 # Do we have the required input objects ?
 if [[ $(Check_Input "${AMIS_IMPORT_XML}") -ne 0 ]];
 then
@@ -220,17 +233,17 @@ else
     exit
   fi
 fi
-　
-　
+
+
 # ****************************************************************
 # OK, XML file and /Images directory are present, lets continue...
 # ****************************************************************
 # Count XML lines and Images
 LINES=`cat ${AMIS_IMPORT_XML} | wc -l`
 IMAGES=`ls ${AMIS_IMPORT_IMAGES} | wc -l`
-　
+
 Write_Log "OK: both XML file and /Images directory are present containing ${LINES} XML-lines and ${IMAGES} images"
-　
+
 # Now copy the input from the FTP location to the location php expects it..
 cp -p -f ${AMIS_IMPORT_XML} ${AMIS_IMPORT_PATH}
 RC=$?
@@ -240,7 +253,7 @@ then
   Write_Tail
   exit
 fi
-　
+
 # Now we have todo some extra stuff to move the Images directory and
 # its contents to to PHP location:
 # 1: Does the "/Images" subdir exist ?
@@ -287,18 +300,18 @@ else
   Write_Tail
   exit
 fi
-　
+
 Write_Log "OK: both XML file and the /Images directory are copied from FTP to PHP location"
-　
+
 # ****************
 # Start the IMPORT
 # ****************
-if [[ $(Load_Data "${XML_URL}" ) -eq 0 ]];
+RC=$(Load_Data "${XML_URL}")
+if [[ ${RC} -eq 0 ]];
 then
   Write_Log "OK: Import succesfull"
 else
-  Write_Log "Error: Import failed !"
+  Write_Log "Error: Import failed, RC=${RC} !"
 fi
-　
+
 Write_Tail
-　
