@@ -2,13 +2,15 @@
 ####################################################################################
 # Name: count_obadr.s
 #
-# Uses: count_obadr.e#
+# Uses: count_obadr.e
 #
-# Purp: Count number of rows in (mariadb)amis.objectAdres table and write
-#       result back to logfile
+# Purp: Perform one or more queries todo some counting in (mariadb)amis. tables
+#       and write results back to logfile
 #
 # How :
-#   - Issue the mysql command with the appropriate parms
+#    1) The environment file holds an array containing the query/queries
+#    2) A loop is initiated in which the mysql command with the appropriate parms
+#       is executed for each query from 1)
 #
 # Date: January 2017 (PH)
 #
@@ -86,8 +88,11 @@ Write_Head
 #############################################
 # RUN
 #############################################
-SQLRC=`Do_Query "${SQLQUERY}"`
-Write_Log "Result ${SQLQUERY}: ${SQLRC}"
+for SQLQUERY in "${SQLQUERIES[@]}"
+do
+  SQLRC=`Do_Query "${SQLQUERY}"`
+  Write_Log "Result ${SQLQUERY}: ${SQLRC}"
+done
 
 # Write logfooter
 Write_Tail
