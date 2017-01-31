@@ -78,8 +78,10 @@ function Do_Query {
 #############################################
 # INIT
 #############################################
+# set -x
 TODAY=`date +%Y%m%d`
 LOGFILE="${AMIS_COUNT_LOG_PATH}/${AMIS_COUNT_LOG_FNAME}${TODAY}${AMIS_COUNT_LOG_EXT}"
+SQLPWD=$(${SCRIPTDIR}/yenc.s ${SQLPW} @)
 
 # Write logheader
 Write_Head
