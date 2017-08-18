@@ -36,7 +36,6 @@ function Write-Log([string]$strLogData)
    $strTime=(Get-Date).ToString("HHmmss") 
    "$strHsName-$strDate-$strTime : $strLogData" >> $strLogFile 
 } 
-
 　
 function RestartServices($strService2Restart)
 {
@@ -100,7 +99,6 @@ function End-of-Job()
   Exit
 }
 
-　
 ########## 
 # Logfile  
 ########## 
