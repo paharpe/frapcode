@@ -8,7 +8,12 @@
 # Log         : Logfile is named something like Restart_Decos-dd-mm-yyy.log 
 #               31 versions are being maintained, older ones are cleaned
 #               automatically 
-# Notes       : All settings should be made in the Init (1) section 
+# Notes       : All settings should be made in the Init (1) section
+#
+# Important   : User who is running this script should be member of "Administrators"
+#               otherwise the command: "Get-Service -DisplayName $strService2Restart"
+#               will produce NO output !!
+#
 # Author      : PH 
 # Date        : 2017-08-14 
 ############################################################################################  
