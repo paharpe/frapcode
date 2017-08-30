@@ -57,6 +57,30 @@ function Write-Report-Head()
   Write-Output " "                                  >> $strAtt_Filename
 }
 　
+function Cleanup-Log($strDir, $strLogBase, $intDays)
+{
+  $intFiles   = 0  
+  $strPattern = $strLogBase +"*.log"
+  $intAge     = (Get-Date).AddDays(-$intDays)
+  $strAge     = $intAge.Year.ToString() + "-" + $intAge.Month.ToString("0#") + "-" + $intAge.Day.ToString("0#")
+  
+  Write-Log "Delete '$strPattern' files older than or equal to : $strAge" 
+  
+  $strLogFiles = Get-Childitem
+  $strDir -Include $strPattern -Recurse | Where {$_.CreationTime -le $intAge}
+  
+  foreach ($strLogFile in $strLogFiles)
+  { 
+    if ($strLogFile -ne $NULL)
+    {
+      Write-Log "Deleting $strLogFile"
+      # Remove-Item $strLogFile.FullName | out-null
+      $intFiles++
+    }
+  }
+  return $intFiles
+} 
+ 
 function Get-Failed-Scans()
 {
   if ( -Not ( Test-Path $strFailed_Input_Path ))
@@ -134,9 +158,10 @@ $bDebug                  = $False
 　
 #Get filename of this script, the first part of the logfile will be made the equal to this. 
 $strMyName   = $MyInvocation.MyCommand.Name.Split(".")[0] #Get filename of this script in order to compose a generic logfilename 
+$strLogDir   = $strBase_Path +"\log"
 $strLogBase  = $strMyName + "-" + $strDate 
 $strLogExt   = ".log" 
-$strLogFile  = $strBase_Path + "\log\$strLogBase$strLogExt" 
+$strLogFile  = $strLogDir + "\$strLogBase$strLogExt" 
 　
  
 #################################################################################################### 
@@ -145,7 +170,9 @@ $strLogFile  = $strBase_Path + "\log\$strLogBase$strLogExt"
 Write-Log-Head
 　
 Write-Report-Head
-　
+
+Cleanup-log $strLogDir $strLogBase 31
+ 
 Get-Failed-Scans
 　
 Send-Mail $strSender_Mail_Address $strReceipt_Mail_Address "Overzicht bestanden in directory \failed" $strAtt_Filename
