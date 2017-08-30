@@ -8,7 +8,8 @@
 # Files    (1): Every run file c:\management\scripts\SendFailedDecosScans\failed_scans.txt 
 #               is written and sent as an attachment
 #          (2): Logfile: Decosmail-dd-mm-yyyy.log  
-# Notes       : All settings should be made/changed in the Init (1) section 
+# Notes       : All settings should be made/changed in the Init (1) section. Still needs
+#               to write a logfile cleanup mechanism !!
 # Author      : PH 
 # Date        : 2017-08-30 
 #############################################################################################  
