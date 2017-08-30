@@ -58,7 +58,17 @@ function Write-Report-Head()
 　
 function Get-Failed-Scans()
 {
-  Get-ChildItem -Path $strFailed_Input_Path | Add-Content $strAtt_Filename
+  if ( -Not ( Test-Path $strFailed_Input_Path ))
+  {
+    Write-Log "'$strFailed_Input_Path' does not exist !"
+    end-of-job
+  } 
+  else
+  {
+    $intFailedCount=(Get-ChildItem -Path $strFailed_Input_Path | Measure-Object ).Count
+    Write-Log "Number of failed objects: $intFailedCount"
+    Get-ChildItem -Path $strFailed_Input_Path | Add-Content $strAtt_Filename
+  }
 }
  
 function Send-Mail($strSender, $strRecipient, $strSubject, $strAttach)
