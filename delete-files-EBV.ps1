@@ -7,10 +7,11 @@
 # --------------------------------------------------------------------------------------------------------------------------------
 # Jan Wildenberg - 10 Juli 2017
 #
-# Gewijzigd: 2017-10-02 (PH)
+# Gewijzigd: 2017-10-02 (PH): Totaal verbouwd
+#            2017-10-23 (PH): Deleteloop verplaatst van mainline naar function om deze meerdere malen te kunnen uitvoeren
+#                             met parameters, er moet namelijk worden geschoond in >1 directory naar nu blijkt
 # --------------------------------------------------------------------------------------------------------------------------------
-
-. "C:\Users\pharpe\Documents\Adam\EBV-BINF\cleanup-log.ps1"
+. "C:\management\Scripts\Delete_Files_EBV\cleanup-log.ps1"
 
 Set-PSDebug -Trace 0
 
@@ -47,6 +48,38 @@ function End-of-Job()
   Exit
 }
 
+function cleanup-data([String] $strDataDir, [DateTime] $dtLimit)
+{
+
+  ###############
+  # Exists ?
+  ###############
+  if ( Test-Path $strDataDir )
+  {
+    # nop
+  }
+  else
+  {
+    Write-Log "Data directory $strDataDir does not exist !"
+    exit
+  }
+
+  # Select files older than the $dtLimit.
+  # --------------------------------------------------------------------------------------------------------------------------------
+  $oldfiles = Get-ChildItem -Path $strDataDir -Recurse -Force | Where-Object { !$_.PSIsContainer -and $_.CreationTime -lt $dtLimit }
+  $filesnum=$oldfiles.Count
+  
+  foreach ($oldfile in $oldfiles)
+  {  
+    #display
+    Write-Log $oldfile -Name 
+
+    #delete
+    $oldfile.Delete()
+  }
+
+  Write-Log "Total number of deleted files: $filesnum"
+}
 
 ########## 
 # Init  
@@ -60,7 +93,6 @@ function End-of-Job()
  
 #Get filename of this script, the first part of the logfile will be made the equal to this. 
 $strLogDir   = "C:\management\log"
-$strLogDir =  "C:\Users\pharpe\Documents\Adam\EBV-BINF"
 
 $strMyName   = $MyInvocation.MyCommand.Name.Split(".")[0] #Get filename of this script in order to compose a logfilename 
 $strLogBase  = $strMyName + "-" + $strDate 
@@ -70,9 +102,7 @@ $strPattern  = "$strMyName*.log"
  
 $dtLimit     = (Get-Date).AddDays(-30)
 
-$strDataDir  = "D:\DATA\EBV\common\import"
-$strDataDir  =  "C:\Users\pharpe\Documents\Adam\EBV-BINF\import"
-
+　
 ##################
 # Checks
 ##################
@@ -89,18 +119,6 @@ else
   echo "Logdirectory $strLogDir does not exist !"
   exit
 }
-###############
-# Datadirectory
-###############
-if ( Test-Path $strDataDir )
-{
-  # nop
-}
-else
-{
-  Write-Log "Data directory $strDatadir does not exist !"
-  exit
-}
 
 ##################
 # Cleanup old logs
@@ -108,7 +126,7 @@ else
 
 Write-Log "Housekeeping: deleting old script logfiles"
 
-$intFiles=(Cleanup-log $strLogDir $strPattern 31)
+# $intFiles=(Cleanup-log $strLogDir $strPattern 31)
 
 Write-Log "Done: Number of deleted old scriptlogfiles: $intFiles"
 
@@ -120,21 +138,10 @@ Write-Log " "
 Start-of-Job
 
 Write-Log "Deleting EBV-BINF files older than: $dtLimit"
+cleanup-data D:\DATA\EBV\common\import $dtLimit
+#Write-Log " "
+#cleanup-data D:\DATA\EBV\common\importdone $dtLimit
+#Write-Log " "
+#cleanup-data D:\DATA\EBV\common\done $dtLimit
 
-# Select files older than the $dtLimit.
-# --------------------------------------------------------------------------------------------------------------------------------
-$oldfiles = Get-ChildItem -Path $strDataDir -Recurse -Force | Where-Object { !$_.PSIsContainer -and $_.CreationTime -lt $dtLimit }
-$filesnum=$oldfiles.Count
-
-foreach ($oldfile in $oldfiles)
-{  
-  #display
-  Write-Log $oldfile -Name 
-
-  #delete
-  # $oldfile.Delete()
-}
-
-Write-Log "Total number of deleted files: $filesnum"
-
-End-of-Job
+End-of-Job 
