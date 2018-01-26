@@ -1,0 +1,80 @@
+#!/bin/ksh
+
+#########################################################################################
+# Naam : ftps_verstuur.scr
+#
+# Doel : Versturen van zojuist aangemaakte file met overzicht uit ftps diretories
+#
+# LETOP: De meeste hier gebruikte variabelen komen uit de 'ENV' file
+#
+#
+# Componenten: ftps.env,
+#              ftps_logius.txt
+#
+# Door: P.Harpe, juli 2012
+#########################################################################################
+
+# set -x
+
+TEKST_FILE="${SCRIPT}ftps_logius.txt"
+
+if [[ $1 == "" ]] then
+  echo "Parameter missing"
+  return -1
+fi
+
+if [[ ! -f $1 ]] then
+  echo "File $1 does not exist"
+  return -1
+else
+  ATT=$1
+  MAIL_SUBJ="${MAIL_SUBJ} `date +%Y-%m-%d' '%H:%M`"
+  (
+  sleep 1
+  echo "helo ${MAIL_HOST}"
+  sleep 1
+  echo "mail from:${MAIL_FROM}"
+  sleep 1
+  echo "rcpt to:${MAIL_TO}"
+  sleep 1
+  echo "rcpt to:${MAIL_CC}"
+  sleep 10
+  echo "data"
+  sleep 1
+  echo "subject:${MAIL_SUBJ}"
+  sleep 1
+  echo "from:Servicedesk Overheid ${MAIL_FROM}"
+  sleep 1
+  echo "to:${MAIL_TO}"
+  sleep 1
+  echo "cc:${MAIL_CC}"
+  sleep 1  
+  echo " "
+  sleep 1
+  echo "MIME-Version: 1.0"
+  sleep 1
+  echo  "Content-Type: multipart/mixed;boundary=grens"
+  sleep 1
+  echo  "--grens"
+  sleep 1
+  echo  "Content-Type: text/plain"
+  sleep 1
+  if [[ -f ${TEKST_FILE} ]] then
+    cat ${TEKST_FILE}
+  else
+ echo "Geachte,"
+    echo " "
+    echo "Hierbij het FTPS bestanden overzicht"
+  fi
+  sleep 1
+  echo "--grens"
+  sleep 1
+  echo  "Content-Disposition: attachment; filename=FTPS_ovz`date +%u`.txt"
+  cat ${ATT}
+  sleep 1
+  echo "."
+  sleep 1
+  echo "QUIT"
+  ) | telnet ${MAIL_HOST} 25
+fi
+
