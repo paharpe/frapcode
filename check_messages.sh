@@ -186,7 +186,7 @@ done < ${FLATOUT}
 
 # Dynamically compose returnmessage....
 # --------------------------------------------------------------------------------
-RETURN_MSG="relevant errors found in `basename ${FLATIN}` within last ${MINS} minutes: "
+RETURN_MSG="relevant errors found in `basename ${FLATIN}` within last ${MINS} minutes"
 COMMA=","
 
 if [[ ${FOUND_TOT} -lt $warn_rc ]];
@@ -199,7 +199,7 @@ else
      if [[ ${DIF} = 1 ]]; then
       COMMA=""
     fi
-    RETURN_MSG="${RETURN_MSG} ${SEARCH_ARRAY[${i}]}: ${HIT_ARRAY[${i}]}${COMMA} "
+    RETURN_MSG="${RETURN_MSG}: ${SEARCH_ARRAY[${i}]}: ${HIT_ARRAY[${i}]}${COMMA} "
   done
 
   if [[ ${FOUND_TOT} -ge $warn_rc && ${FOUND_TOT} -lt $crit_rc ]];then
