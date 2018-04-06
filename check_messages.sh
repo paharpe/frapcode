@@ -194,12 +194,13 @@ then
  echo "OK: No ${RETURN_MSG}"
  exit ${OK}
 else
+  RETURN_MSG="${RETURN_MSG}:"
   for i in "${!SEARCH_ARRAY[@]}"; do
      DIF=$((${#SEARCH_ARRAY[@]}-$i))
      if [[ ${DIF} = 1 ]]; then
       COMMA=""
     fi
-    RETURN_MSG="${RETURN_MSG}: ${SEARCH_ARRAY[${i}]}: ${HIT_ARRAY[${i}]}${COMMA} "
+    RETURN_MSG="${RETURN_MSG} ${SEARCH_ARRAY[${i}]}: ${HIT_ARRAY[${i}]}${COMMA} "
   done
 
   if [[ ${FOUND_TOT} -ge $warn_rc && ${FOUND_TOT} -lt $crit_rc ]];then
