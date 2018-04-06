@@ -108,10 +108,10 @@ function get_index {
 # INIT
 ###########################################
 # Standard Exit Codes for Nagios
-OK      = 0
-WARNING = 1
-CRITICAL= 2
-UNKNOWN = 3
+OK=0
+WARNING=1
+CRITICAL=2
+UNKNOWN=3
 
 # FLATIN='/home/beheer/messages.log'
 FLATIN='/var/log/messages'
