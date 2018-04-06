@@ -107,20 +107,26 @@ function get_index {
 ###########################################
 # INIT
 ###########################################
-FLATIN='/home/beheer/messages.log'
-FLATOUT='/tmp/.err.messages.tmp'
+# Standard Exit Codes for Nagios
+OK      = 0
+WARNING = 1
+CRITICAL= 2
+UNKNOWN = 3
 
+# FLATIN='/home/beheer/messages.log'
+FLATIN='/var/log/messages'
+FLATOUT='/tmp/.err.messages.tmp'
 
 FOUND_TOT=0
 
 if [[ ! -f ${FLATIN} ]]; then
   echo "UNKNOWN: Inputfile ${FLATIN} does not exist !"
-  exit
+  exit ${UNKNOWN}
 fi
 
 if [[ ! -d `dirname ${FLATOUT}` ]]; then
   echo "UNKNONW: temporay path does not exist !"
-  exit
+  exit ${UNKNOWN}
 fi
 
 # Remove old flatout file
@@ -186,7 +192,7 @@ COMMA=","
 if [[ ${FOUND_TOT} -lt $warn_rc ]];
 then
  echo "OK: No ${RETURN_MSG}"
- 
+ exit ${OK}
 else
   for i in "${!SEARCH_ARRAY[@]}"; do
      DIF=$((${#SEARCH_ARRAY[@]}-$i))
@@ -198,7 +204,9 @@ else
 
   if [[ ${FOUND_TOT} -ge $warn_rc && ${FOUND_TOT} -lt $crit_rc ]];then
     echo "WARNING: ${FOUND_TOT} ${RETURN_MSG}"
+    exit ${WARNING}
   else
     echo "CRITICAL: ${FOUND_TOT} ${RETURN_MSG}"
+    exit ${CRITICAL}
   fi
 fi
