@@ -138,9 +138,16 @@ fi
 # Initialize timevars
 # ===============================
 MINS=10
-MMDD=$(echo `date +%b" "%d`)
-TIME_START="${MMDD} $(echo `date +%H:%M:00 --date "-${MINS} min"`)"
-TIME_END="${MMDD} $(echo `date +%H:%M:00`)"
+MMM=$(echo `date +%b`)
+DD=$(echo `date +%e`)
+if [[ ${DD} -lt  10 ]]; then
+  MMMDD="${MMM}  ${DD}"
+else
+  MMMDD="${MMM} ${DD}"
+fi
+TIME_START="${MMMDD} $(echo `date +%H:%M:00 --date "-${MINS} min"`)"
+TIME_END="${MMMDD} $(echo `date +%H:%M:00`)"
+
 
 # SearchCriteria
 # ===============================
