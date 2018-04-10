@@ -26,7 +26,7 @@
 # (PH), 2018-04-04
 #
 # Changelog:
-#
+# (PH), 2018-04-10: errors found => error(s) found & added ${MMDD} in timevars
 ################################################################################################################################################
 
 # Get the arguments
@@ -138,8 +138,9 @@ fi
 # Initialize timevars
 # ===============================
 MINS=10
-TIME_START=$(echo `date +%H:%M:00 --date "-${MINS} min"`)
-TIME_END=$(echo `date +%H:%M:00`)
+MMDD=$(echo `date +%b" "%d`)
+TIME_START="${MMDD} $(echo `date +%H:%M:00 --date "-${MINS} min"`)"
+TIME_END="${MMDD} $(echo `date +%H:%M:00`)"
 
 # SearchCriteria
 # ===============================
@@ -186,7 +187,7 @@ done < ${FLATOUT}
 
 # Dynamically compose returnmessage....
 # --------------------------------------------------------------------------------
-RETURN_MSG="relevant errors found in `basename ${FLATIN}` within last ${MINS} minutes"
+RETURN_MSG="relevant error(s) found in `basename ${FLATIN}` within last ${MINS} minutes"
 COMMA=","
 
 if [[ ${FOUND_TOT} -lt $warn_rc ]];
