@@ -2,16 +2,16 @@
 ####################################################################################################################################################
 # Name: check_messages.sh
 #
-# Purp:  Count any occurrences at the bottom of /var/log/messages file of the search string values supplied in array "SEARCH_ARRAY".
+# Purp: Count any occurrences at the bottom of /var/log/messages file of the search string values supplied in array "SEARCH_ARRAY".
 #
-#        According to the specifiactions we are only looking 10 minutes back in time, so a 'grep | tail' is performed to limit performance impact
+#       According to the specifiactions we are only looking 10 minutes back in time, so a 'grep | tail' is performed to limit performance impact
 #
-#        a WARNING message will be returned if the count is >= -w <int> && < -c <int> value
-#        a CRITICAL message is returned if the count >= -c <int> value
+#       a WARNING message will be returned if the count is >= -w <int> && < -c <int> value
+#       a CRITICAL message is returned if the count >= -c <int> value
 #
-# Deps:  ${FLATOUT} hidden file to temporary store results. Every run the existing file is removed first
+# Deps: ${FLATOUT} hidden file to temporary store results. Every run the existing file is removed first
 #
-# syntax: check_messages -w <int> -c <int>
+# syntax: ./check_messages.sh -w <int> -c <int>
 #
 # returns:
 # - Warning  message
@@ -27,6 +27,7 @@
 #
 # Changelog:
 # (PH), 2018-04-10: errors found => error(s) found & added ${MMDD} in timevars
+# (PH), 2018-04-11: removed "SEARCH_ARRAY[0]='kernel.*error'": caused too many criticals 
 ################################################################################################################################################
 
 # Get the arguments
@@ -65,9 +66,6 @@ fi
 if [[ "$helper" == "help" ]]; then
   echo
   echo "check_messages help"H='krnel.*cifs'
-
-echo $(get_index ${BLAH})
-
   echo
   echo "Usage:"
   echo "  check_messages -w <warn_val> -c <crit_val> "
@@ -138,27 +136,29 @@ fi
 # Initialize timevars
 # ===============================
 MINS=10
+#jan/feb/apr etc...
 MMM=$(echo `date +%b`)
 DD=$(echo `date +%e`)
 if [[ ${DD} -lt  10 ]]; then
+  #jan  9
   MMMDD="${MMM}  ${DD}"
 else
+  #jan 10
   MMMDD="${MMM} ${DD}"
 fi
+#jan  9 16:12:00
 TIME_START="${MMMDD} $(echo `date +%H:%M:00 --date "-${MINS} min"`)"
+#jan  9 16:22:00
 TIME_END="${MMMDD} $(echo `date +%H:%M:00`)"
-
 
 # SearchCriteria
 # ===============================
 declare -a SEARCH_ARRAY
-SEARCH_ARRAY[0]='kernel.*error'
-SEARCH_ARRAY[1]='kernel.*deadlock'
-SEARCH_ARRAY[2]='kernel.*cifs'
+SEARCH_ARRAY[0]='kernel.*deadlock'
+SEARCH_ARRAY[1]='kernel.*cifs'
 
-# Corresponding HIT array ( must be equal sized as SEARCH_ARRAY ! )
+# Corresponding HIT array ( must have at least the same size as SEARCH_ARRAY ! )
 HIT_ARRAY=(0 0 0)
-
 
 ############################################
 # Part 1: tail grep on messages; we need the
@@ -179,12 +179,10 @@ while read LINE; do
   # ----------------------------------------------------------------------------
   if [[ ${LINE} > ${TIME_START} && ${LINE} < ${TIME_END} || ${LINE} =~ ${TIME_END} ]];
   then
-
     FOUND_TOT=$((FOUND_TOT + 1))
     SEARCH_ITEM=`echo ${LINE} | cut -d'~' -f2`
     SEARCH_INDEX=$(get_index ${SEARCH_ITEM})
     HIT_ARRAY[${SEARCH_INDEX}]=$((HIT_ARRAY[${SEARCH_INDEX}] + 1))
-
   fi
 done < ${FLATOUT}
 
