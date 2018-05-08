@@ -65,12 +65,12 @@ fi
 # Display help and exit when -h|--help is selected
 if [[ "$helper" == "help" ]]; then
   echo
-  echo "check_messages help"H='krnel.*cifs'
+  echo "check_messages help"
   echo
   echo "Usage:"
   echo "  check_messages -w <warn_val> -c <crit_val> "
   echo
-  echo "  -h, --help     this help text"
+  echo "                 -h, --help this help text"
   echo
   exit 0
 fi
@@ -85,7 +85,7 @@ if [ -z "$warn_rc" ] || [ -z "$crit_rc" ]; then
     echo "No critical count specified";
     echo " "
   fi
-  echo "For more information type: check_rc -h"
+  echo "For more information type: check_messages -h"
   exit 3
 fi
 
