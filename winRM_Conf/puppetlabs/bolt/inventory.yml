@@ -1,0 +1,22 @@
+---
+groups:
+  - name: decos_sdn_tst
+    nodes: 
+      - sw444v1340
+      - sw444v1343
+      - sw444v1344
+      - sw444v1326
+    config:
+      transport: winrm
+      winrm:
+        port: 5986
+  - name: decos_sdw_tst
+    nodes: 
+      - sw444v1171
+      - sw444v1200
+      - sw444v1173
+      - sw444v1172
+    config:
+      transport: winrm
+      winrm:
+        port: 5986
