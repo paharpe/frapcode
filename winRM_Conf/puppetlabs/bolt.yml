@@ -1,0 +1,10 @@
+---
+concurrency: 10
+format: human
+inventoryfile: 'C:\Users\pharpe\.puppetlabs\bolt\inventory.yml'
+winrm:
+  ssl: true
+  connect-timeout: 10
+  tmpdir: 'c:\windows\temp'
+  user: 'hosting'
+  cacert: 'C:\Users\pharpe\.puppetlabs\ca.pem'
