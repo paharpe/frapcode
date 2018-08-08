@@ -1,9 +1,23 @@
-﻿####################################################################################################
+####################################################################################################
 # Naam: find_gwerr.ps1
 # Doel: Het via e-mail melden van het aantal malen dat een bepaalde foutmelding in de PView5 Wrapper
 #       logfile voorkomt.
 #
 # PH, november 2017
+#
+# Changed Wrapperpath from D:\Program files\..5.0\wrapper
+#                       to D:\Program files\..5.1\wrapper                            (PH,2017-11-17)
+# Changed Wrapperpath from D:\Program files\..5.1\wrapper
+#                       to D:\Program files\..5.2\wrapper                            (PH,2017-12-21)
+# Changed Wrapperpath from D:\Program files\..5.2\wrapper
+#                       to D:\Program files\..5.2.1\wrapper                          (PH,2018-01-11)
+# Changed logfile cleaning by #. Wrapper*.log files are archived by another proces   (PH,2018-03-14)
+# Changed Wrapperpath from D:\Program files\..5.2.1\wrapper
+#                       to D:\Program files\..5.3\wrapper                            (PH,2018-05-18)
+# Changed Wrapperpath from D:\Program files\..5.3\wrapper
+#                       to D:\Program files\..5.4\wrapper                            (PH,2018-07-27)
+#
+# Changed into dynamic determined Wrapperpath                                        (PH,2018-08-07)
 ####################################################################################################
 $strScriptPath="C:\management\Scripts"
 
@@ -17,12 +31,21 @@ $strScriptPath="C:\management\Scripts"
 ####################################################################################################
 $strHostName=hostname
 $strString2Find="Bad Gateway"
-$strDateNow=(Get-Date).ToString("yyyyMMdd")  
 
+# Pview5 wrapper Base path
+$strWrapperBase="D:\program files\ADP\workforce"
+$strPVersion=(Get-ChildItem $strWrapperBase `
+                                            | ?{ $_.PSIsContainer } `
+                                            | Where-Object { $_.Name -match '^[0-9].[0-9]' } `
+                                            | Sort-Object -Descending `
+                                            | Select-Object -ExpandProperty Name -First 1 )
+# Now has a value like:  D:\program files\ADP\workforce\5.2
+$strWrapperPath=$strWrapperBase+ "\"+$strPVersion
+
+$strDateNow=(Get-Date).ToString("yyyyMMdd")  
+# TESTDATE $strDateNow="20171115"
 $strWrapper="wrapper"
-$strWrapperPath="D:\program files\ADP\workforce\5.0\wrapper"
 $strWrapperFile=$strWrapper+"."+$strDateNow+".log"
-$strWrapperFull=$strWrapperPath+"\"+$strWrapperFile
 
 $strLogPath="C:\management\log"
 $strLogFile="Pview5_errors"
@@ -36,7 +59,7 @@ $strCC=get_var "cc"
 $strSMTP=get_var "smtp"
 $strSubject=get_var "subject"
 
-$strBodyText= "Geachte,`n`nU ontvangt dit bericht om u te informeren over het aantal malen dat er`n"
+$strBodyText= "Geachte,`n`nU ontvangt dit bericht om u te informeren over het aantal keer dat er`n"
 $strBodyText=$strBodyText+"in de wrapper.log file van vandaag '$strString2Find' foutmeldingen zijn aangetroffen." 
 $strBodyText_signature="`n`nMet vriendelijke groet,`nKPN Business Operations`nDCO Government`ncuoverheid@kpn.com"
 
@@ -45,21 +68,21 @@ $strLogBar= "===================================================================
 ####################################################################################################
 # Functions
 ####################################################################################################
-function write-log([string]$strLogData) 
+function Write-Log([string]$strLogData) 
 { 
   $strDate=(Get-Date).ToString("yyyyMMdd")  
   $strTime=(Get-Date).ToString("HHmmss") 
   "$strHostName-$strDate-$strTime : $strLogData" >> $strLogFull 
 } 
  
- function write-log-Head()
+ function Write-Log-Head()
 {
-  write-log $strLogBar 
-  write-log "Run started" 
-  write-log $strLogBar
+  Write-Log $strLogBar 
+  Write-Log "Run started" 
+  Write-Log $strLogBar
 }
 
-# Maintain counterfile # When today's counterfile does not exist ( yet / anymore )# generate a new one holding initial value of 0 error(s)function init_countfile(){  # Count file does not exist yet ? Create the su*er  if (!( Test-Path ( $strCountFull )))  {    $intErrorcount=0;    echo $intErrorcount > $strCountFull;    write-log "New countfile created: $strCountFull"  }  else  {       $intErrorcount=Get-Content $strCountFull -First 1  }  return $intErrorCount;}
+# Maintain counterfile # When today's counterfile does not exist ( yet / anymore )# generate a new one holding initial value of 0 error(s)function init_countfile(){  # Count file does not exist yet ? Create the su*er  if (!( Test-Path ( $strCountFull )))  {    $intErrorcount=0;    echo $intErrorcount > $strCountFull;    Write-Log "New countfile created: $strCountFull"  }  else  {       $intErrorcount=Get-Content $strCountFull -First 1  }  return $intErrorCount;}
 # Find searchstring in logfile and format result
 #
 # Raw result:
@@ -74,16 +97,28 @@ function write-log([string]$strLogData)
 #
 function get_error([string] $strFunction)
 {
-
-  if (!( Test-Path ( $strWrapperFull )))  {
-    write-log "Inputfile: $strWrapperFull does not exist !"
-    return -1
+  if ( !( Test-Path ( $strWrapperPath ) ) )
+  {
+    Write-Log Wrapper base path ( $strWrapperPath ) does not exist !
+    return -1   
   }
+
+  # Find and get today's wrapper file: ( wrapper.yyyymmdd.log )
+  $strWrapperFile_current=(Get-ChildItem $strWrapperPath -recurse -include $strWrapperFile) | Select-Object LastWriteTime, FullName | Sort-Object LastWriteTime | Select-Object -ExpandProperty FullName  -Last 1 
+  if ( $strWrapperFile_current -eq $null )
+  {
+    Write-Log "There is no such wrapper file: $strWrapperFile !"
+    return -1   
+  }  
   else
   {
-    write-log "Searching in file: $strWrapperFull"
+
+    Write-Log "Searching in: $strWrapperFile_current"
+
+    # This selectstring is causes too many finding and is deprecated
+    # $strErrors=((Select-String -Path $strWrapperFull -Pattern $strString2Find | cut -d" " -f2 | grep -v ^\[ | grep -v ^"(" ) | Where { $_ -ne "" } | ForEach { $_.Replace(" ","") } | cut -d"|" -f1)
     
-    $strErrors=((Select-String -Path $strWrapperFull -Pattern $strString2Find | cut -d" " -f2 | grep -v ^\[ | grep -v ^"(" ) | Where { $_ -ne "" } | ForEach { $_.Replace(" ","") } | cut -d"|" -f1)
+    $strErrors=(Select-String -Path $strWrapperFile_current -Pattern $strString2Find )
  
     if ( $strFunction -eq "count" )
     { 
@@ -126,14 +161,14 @@ function Send-Mail([string] $intErrorCount)
 
   if ( !(check_mailaddress $strSender ))
   {
-    write-log "From:$strSender is not a valid e-mailadres !"
+    Write-Log "From:$strSender is not a valid e-mailadres !"
     exit
   }
   $objMessage.From=$strSender
   
   if ( !(check_mailaddress $strRecipient ))
   {
-    write-log "To:$strRecipient is not a valid e-mailadres !"
+    Write-Log "To:$strRecipient is not a valid e-mailadres !"
     exit
   }
   $objMessage.To.Add($strRecipient)
@@ -148,7 +183,7 @@ function Send-Mail([string] $intErrorCount)
       {
         if ( !(check_mailaddress $strCC ))
         {
-          write-log "CC:$strCC is not a valid e-mailadres !"
+          Write-Log "CC:$strCC is not a valid e-mailadres !"
           exit
         }
         echo $strCC
@@ -167,12 +202,19 @@ function Send-Mail([string] $intErrorCount)
     
   $objMessage.Body=$strBodyText + $strBodyText_signature
   $objSMTP.UseDefaultCredentials=$true
-  $objSMTP.Send($objMessage)    
+  try
+  {
+    $objSMTP.Send($objMessage)    
 
-  $strMailRC=$?
+    $strMailRC=$?
+  
+    Write-Log "Returncode from sendmail: $strMailRC"
+  }
 
-  Write-log "Returncode from sendmail: $strMailRC"
-
+  catch
+  {
+     Write-Log "Sendmail failed and ran into an error !"
+  }
 }
 
 
@@ -180,16 +222,16 @@ function Send-Mail([string] $intErrorCount)
 # Main line
 ###################################################################################################
 
-write-log-Head
+Write-Log-Head
  
 Cleanup-log $strLogPath $strLogFile $intKeep
-Cleanup-Log $strWrapperPath $strWrapper $intKeep
+# See changelog Cleanup-Log $strWrapperPath $strWrapper $intKeep
 
-write-log "Retrieved mail vars: from:$strSender / to:$strRecipient / cc:$strCC / smtp:$strSMTP"
+Write-Log "Retrieved mail vars: from:$strSender / to:$strRecipient / cc:$strCC / smtp:$strSMTP"
 
 $intErrorcount=init_countfile;
 
-$strErrorTimes=get_error " ";
+# $strErrorTimes=get_error " ";
 $intErrorCount_New=get_error "count";
 
 if ( $intErrorCount_New -ge 0)
@@ -200,15 +242,17 @@ if ( $intErrorCount_New -ge 0)
     #save the new number of errors to the error-counterfile
     echo $intErrorCount_New > $strCountFull
 
-    write-log "Number of errors has changed from:  $intErrorCount to: $intErrorCount_New"
-    write-log "Time(s): $strErrorTimes"
-    # Send-Mail    
+    Write-Log "Number of errors has changed from:  $intErrorCount to: $intErrorCount_New"    
   }
   else
   {
-    write-log "No change in number of errors ($intErrorCount_New)"
-  }
- 
+    Write-Log "No change in number of errors ($intErrorCount_New)"
+  }   
+}
+else
+{
+  Write-Log "Function get_error returned an error. Mail will NOT be sent !"
+  End-of-Job
 }
 
 # In overleg met Rob Noorbeek en 'Staffa' is besloten om de e-mail op een 2-tal vaste tijdstippen

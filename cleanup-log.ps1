@@ -5,13 +5,17 @@
 #        3 number of days z.b.: 31
 #
 # PH, 2017-10-05
+# Changed: $strPattern needed wildcard *, without this no
+#          logfile cleaning was done ( PH, 2017-12-22 )
+# Changed: Varnames $strLogFile and $strLogFiles changed to
+#                   $strCleanLog    $strCleanLogs 
 ##############################################################
 function Cleanup-Log($strDir, $strPattern, $intDays)
 {
   # Check if logdirectory exists
   if ( Test-Path $strDir ) 
   {
-    # Nop
+    $strDir = $strDir
   }
   else
   {
@@ -24,6 +28,11 @@ function Cleanup-Log($strDir, $strPattern, $intDays)
   {
     echo "File pattern is empty !"
     exit
+  }
+  else
+  # Add wildcard char
+  {
+    $strPattern = $strPattern + "*.log"
   }
 
   # And finaly: are the number of days correctly passed ?
@@ -49,18 +58,18 @@ function Cleanup-Log($strDir, $strPattern, $intDays)
 
   $intFiles   = 0
   $intAge     = (Get-Date).AddDays(-$intDays)
-  $strAge     = $intAge.Year.ToString() + "-" + $intAge.Month.ToString("0#") + "-" + $intAge.Day.ToString("0#")
+  $strAge     = $intAge.ToString("yyyy-MM-dd")
 
   Write-Log "Deleting '$strPattern' files created written earlier or on: $strAge"
-  
-  $strLogFiles = Get-Childitem $strDir -Include $strPattern -Recurse | Where {$_.CreationTime -le $intAge}
+
+  $strCleanLogs = Get-Childitem $strDir -Filter $strPattern | Where {$_.Extension -eq ".log" -and $_.CreationTime -le $intAge}
  
-  foreach ($strLogFile in $strLogFiles) 
+  foreach ($strCleanLog in $strCleanLogs) 
   {
-    if ($strLogFile -ne $NULL)
+    if ($strCleanLog -ne $NULL)
     {        
-      Write-Log "Deleting $strLogFile"
-      Remove-Item $strLogFile.FullName | out-null
+      Write-Log "Deleting $strCleanLog"
+      # Remove-Item $strCleanLog.FullName | out-null
       $intFiles++
     }    
   }
