@@ -45,12 +45,10 @@ WriteLog(TextToLog)
 ;********************************************************************
 #SingleInstance force
 
-debug=1
-
 Locations_ini=C:\Management\Scripts\bagpc.config
 Logdir=C:\management\log
 Logfile=%Logdir%\ahl.log
-Destdir=C:\users\administrator\downloadt
+Destdir=C:\users\pharpe\downloads
 Unzip="C:\Program Files\7-Zip\7z.exe"
 Unzip="C:\management\Programs\Utils\unzip.exe"
 ;
@@ -82,6 +80,59 @@ if !FileExist(Locations_ini)
   Exit  
 } 
 
+
+;********************************************************************
+; PROCESSING
+;********************************************************************
+
+;***********************************************
+;Inlezen locatie van INI file
+;***********************************************
+FileRead, BagPC, %Locations_ini%
+if ErrorLevel  ; Successfully loaded.
+{
+  Msg=An error has occurred when reading %Locations_ini%
+  WriteLog( Msg )
+  Exit  
+}
+
+;************************************************
+;Inlezen stuurdata uit INI file
+;************************************************
+debug=0
+BagPC="C:\users\pharpe\downloads"
+
+BagPC_vars := Array()
+Loop, Read, %Locations_ini%
+{
+    BagPC_vars.Push(A_LoopReadLine)
+}
+
+; Read from the array:
+for index, BagPC_var in BagPC_vars
+{   
+  ; Using "for", both the index (or "key") and its associated value
+  ; are provided, and the index can be *any* value of your choosing.
+  ; MsgBox % "Element number " . index . " is " . BagPC_var
+  
+  bagpc_ini := StrSplit(BagPC_var, "=", ".") ; punten(.) doen niet mee
+  if ( bagpc_ini[1] = "debug" )
+  {
+    debug = % bagpc_ini[2]    
+  }
+  if ( bagpc_ini[1] = "bagpc_path" )
+  {
+    BagPC = % bagpc_ini[2]
+  }
+}
+
+Msg=Retrieved: debug = %debug%
+WriteLog( Msg )  
+
+Msg=Retrieved: bagpc path = %BagPC% 
+WriteLog( Msg )  
+
+
 ;***********************************************
 ; Check Destination directory ????
 ;***********************************************
@@ -92,20 +143,16 @@ IfNotExist, %Destdir%
   Exit  
 } 
 
-;********************************************************************
-; PROCESSING
-;********************************************************************
-
 ;***********************************************
-;Inlezen locatie van de BAGPC bestanden
+; Check zip executable
 ;***********************************************
-FileRead, BagPC, %Locations_ini%
-if ErrorLevel  ; Successfully loaded.
+IfNotExist, %Unzip%
 {
-  Msg=An error has occurred when reading %Locations_ini%
+  Msg=Unzip executable %Unzip%  does not exist !
   WriteLog( Msg )
   Exit  
-}
+} 
+
 
 ;************************************************
 ;Zoek naar het meest recente BAGPC bestand dat
