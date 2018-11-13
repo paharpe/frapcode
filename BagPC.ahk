@@ -60,13 +60,20 @@ Einde()
 Basepath=C:\management
 Locations_ini=%Basepath%\Scripts\bagpc.config
 Logdir=%Basepath%\log
-Logfile=%Logdir%\ahl.log
-Destdir=C:\users\pharpe\downloads
-Unzip="C:\Program Files\7-Zip\7z.exe"
+Logfile=%Logdir%\BagPC_update.log
 ;
 BAGHead=Decos Postcode-update (BAG)
 ; POCOHead=Decos Postcode-update oktober 2018 (BAG)
 Ext_Count=0
+
+;********************************************************************
+;MOETEN WE DIT UBERHAUPT WEL WILLEN ????
+;********************************************************************
+MsgBox, 4,, Hiermee wordt de periodieke Decos postcode update gestart`n`nInstellingen worden verwacht in: %Locations_ini%`n`n`nWould you like to continue? (press Yes or No)
+IfMsgBox No
+{  
+  Einde()
+}
 
 
 ;********************************************************************
@@ -120,7 +127,7 @@ if ErrorLevel  ; Successfully loaded.
 debug=0
 BagPC="C:\users\pharpe\downloads"
 Unzip="C:\management\Programs\Utils\unzip.exe"
-
+Destdir=C:\users\pharpe\downloads
 
 BagPC_vars := Array()
 Loop, Read, %Locations_ini%
@@ -148,6 +155,10 @@ for index, BagPC_var in BagPC_vars
   {
     Unzip = % bagpc_ini[2]
   }
+  if ( bagpc_ini[1] = "destdir" )
+  {
+    Destdir = % bagpc_ini[2]
+  }
 }
 
 Msg=Retrieved: debug = %debug%
@@ -159,12 +170,15 @@ WriteLog( Msg )
 Msg=Retrieved: unzip path = %Unzip% 
 WriteLog( Msg )  
 
+Msg=Retrieved: unzip destination directory = %Destdir% 
+WriteLog( Msg )  
+
 ;***********************************************
 ; Check Destination directory ????
 ;***********************************************
 IfNotExist, %Destdir%
 {
-  Msg=Unzip destination %Destdir%  does not exist !
+  Msg=Unzip destination %Destdir%  does not exist. Check %Locations_ini% !
   WriteLog( Msg )
   Einde() 
 } 
@@ -174,11 +188,10 @@ IfNotExist, %Destdir%
 ;***********************************************
 IfNotExist, %Unzip%
 {
-  Msg=Unzip executable %Unzip%  does not exist !
+  Msg=Unzip executable %Unzip%  does not exist. Check %Locations_ini% !
   WriteLog( Msg )
   Einde() 
 } 
-
 
 ;************************************************
 ;Zoek naar het meest recente BAGPC bestand dat
@@ -204,7 +217,7 @@ Loop, %BagPC%\*.zip
 }
 if ( Ext_Count <> 1 )
 {
-  Msg=Error: zipfile %BagPCzip% does not to exist !
+  Msg=Error: zipfile %BagPCzip% does not to exist.  Check %Locations_ini% !
   WriteLog( Msg )
   Einde() 
 }
@@ -213,6 +226,18 @@ else
   Msg=OK zipfile %BagPCzip% Found
   WriteLog( Msg )  
 }
+
+
+;********************************************************************
+;VOOR WE BEGINNEN... SAMENVATTING GEVONDEN MEUK
+;********************************************************************
+MsgBox, 4,, Opgehaalde variabelen:`n`nUnzip met: %Unzip%`n`nUnzip naar: %Destdir%`n`nGevonden BagPC update file: %BagPCzip%`n`n`nWould you like to continue? (press Yes or No)
+IfMsgBox No
+{  
+  Einde()
+}
+
+
 
 ;***********************************************
 ;Unzip the EXE
