@@ -7,6 +7,9 @@
 ;*
 ;* Nodig: C:\Management\Scripts\bagpc.config : points to BAGPC.exe 
 ;*        C:\Management\log
+;* 
+;* Alle andere benodigde settings worden uit het bagpc.config bestand
+;* gelezen
 ;*       
 ;* Door: P.A. Harpe, 26-10-2018
 ;********************************************************************
@@ -40,44 +43,54 @@ WriteLog(TextToLog)
   }
 }
 
+;***********************************************
+Einde()
+;***********************************************
+{
+  MsgBox, BagPc has ended
+  exit
+}
+
+
 ;********************************************************************
 ; INIT
 ;********************************************************************
 #SingleInstance force
 
-Locations_ini=C:\Management\Scripts\bagpc.config
-Logdir=C:\management\log
+Basepath=C:\management
+Locations_ini=%Basepath%\Scripts\bagpc.config
+Logdir=%Basepath%\log
 Logfile=%Logdir%\ahl.log
 Destdir=C:\users\pharpe\downloads
 Unzip="C:\Program Files\7-Zip\7z.exe"
-Unzip="C:\management\Programs\Utils\unzip.exe"
-;
-;c:\management\Programs\Utils\unzip.exe -o D:\_install\DWCompleteCD60\Module-setups\PostcodeUpdateJOIN-okt2018.zip -d c:\users\Administrator\Downloads
 ;
 BAGHead=Decos Postcode-update (BAG)
 ; POCOHead=Decos Postcode-update oktober 2018 (BAG)
 Ext_Count=0
 
+
+;********************************************************************
+; CHECKS
+;********************************************************************
+
 ;***********************************************
-; Check Logdirectory ????
+; Logdirectory exists ????
 ;***********************************************
 IfNotExist, %Logdir%
 {
   FormatTime, CurrentDateTime,, yyyyMMdd HH:mm:ss
   MsgBox, %CurrentDateTime% - Logdirectory %Logdir% does not exist !
-  WriteLog("Exit 1")
-  Exit  
+  Einde() 
 } 
 
 ;***********************************************
-; Check Config file ????
+; Configfile exists ????
 ;***********************************************
 if !FileExist(Locations_ini)
 {
-
   Msg=Configfile %Locations_ini%  does not exist but NEEDS to be present !  
   WriteLog( Msg )
-  Exit  
+  Einde() 
 } 
 
 
@@ -93,14 +106,21 @@ if ErrorLevel  ; Successfully loaded.
 {
   Msg=An error has occurred when reading %Locations_ini%
   WriteLog( Msg )
-  Exit  
+  Einde() 
 }
 
 ;************************************************
-;Inlezen stuurdata uit INI file
+;Inlezen stuurdata vanuit INI file, het gaat om:
+;1 unzip program en path
+;2 bagpc file en path
+;3 debug, 1=true, 0=false
 ;************************************************
+; Set default values which will be overwritten
+; by the config file values
 debug=0
 BagPC="C:\users\pharpe\downloads"
+Unzip="C:\management\Programs\Utils\unzip.exe"
+
 
 BagPC_vars := Array()
 Loop, Read, %Locations_ini%
@@ -124,6 +144,10 @@ for index, BagPC_var in BagPC_vars
   {
     BagPC = % bagpc_ini[2]
   }
+  if ( bagpc_ini[1] = "unzip" )
+  {
+    Unzip = % bagpc_ini[2]
+  }
 }
 
 Msg=Retrieved: debug = %debug%
@@ -132,6 +156,8 @@ WriteLog( Msg )
 Msg=Retrieved: bagpc path = %BagPC% 
 WriteLog( Msg )  
 
+Msg=Retrieved: unzip path = %Unzip% 
+WriteLog( Msg )  
 
 ;***********************************************
 ; Check Destination directory ????
@@ -140,7 +166,7 @@ IfNotExist, %Destdir%
 {
   Msg=Unzip destination %Destdir%  does not exist !
   WriteLog( Msg )
-  Exit  
+  Einde() 
 } 
 
 ;***********************************************
@@ -150,7 +176,7 @@ IfNotExist, %Unzip%
 {
   Msg=Unzip executable %Unzip%  does not exist !
   WriteLog( Msg )
-  Exit  
+  Einde() 
 } 
 
 
@@ -180,7 +206,7 @@ if ( Ext_Count <> 1 )
 {
   Msg=Error: zipfile %BagPCzip% does not to exist !
   WriteLog( Msg )
-  Exit  
+  Einde() 
 }
 else
 {  
@@ -198,7 +224,7 @@ if ErrorLevel = ERROR
   Msg=An error occurred unzipping %BagPCzip%
   MsgBox, %Msg%
   WriteLog( Msg )
-  WriteLog("Exit 4B")
+  Einde()
 }
 Else
 {
@@ -237,7 +263,7 @@ else
 {
   Msg=%BagPCmonth% is een onbekende maand !
   WriteLog ( Msg )
-  exit
+  Einde()
 }
 
 POCOHead=Decos Postcode-update %BagPCmonth_full% %BagPCyear% (BAG)
@@ -286,7 +312,7 @@ IfWinActive, %BAGHead%
 
   Msg=No Decos databaseconnection ? Postcode update not succesfull !
   WriteLog( Msg )
-  Exit
+  Einde()
 }
 
 ;*************************************************
@@ -323,5 +349,4 @@ IfWinActive, %BAGHead%
   WriteLog( Msg )
 }
 
-WriteLog("Exit 6")
-Exit
+Einde()
