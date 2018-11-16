@@ -14,6 +14,7 @@
 ;* Door: P.A. Harpe, 26-10-2018
 ;********************************************************************
 
+
 ;********************************************************************
 ;FUNCTIONS
 ;********************************************************************
@@ -44,10 +45,21 @@ WriteLog(TextToLog)
 }
 
 ;***********************************************
-Einde()
+Einde(Dlg)
 ;***********************************************
-{
-  MsgBox, BagPc has ended
+{  
+  global Logfile
+  global NoExitDlg
+  global ExitDlg
+
+  if ( Dlg=ExitDlg)
+  {
+    MsgBox, 4,, BagPc has ended. Would you like to view the logfile? (press Yes or No)
+    IfMsgBox Yes
+    {  
+      Run, NotePad.exe %Logfile%
+    }
+  }
   exit
 }
 
@@ -61,6 +73,9 @@ Basepath=C:\management
 Locations_ini=%Basepath%\Scripts\bagpc.config
 Logdir=%Basepath%\log
 Logfile=%Logdir%\BagPC_update.log
+ExitDlg=1
+NoExitDlg=0
+
 ;
 BAGHead=Decos Postcode-update (BAG)
 ; POCOHead=Decos Postcode-update oktober 2018 (BAG)
@@ -69,10 +84,10 @@ Ext_Count=0
 ;********************************************************************
 ;MOETEN WE DIT UBERHAUPT WEL WILLEN ????
 ;********************************************************************
-MsgBox, 4,, Hiermee wordt de periodieke Decos postcode update gestart`n`nInstellingen worden verwacht in: %Locations_ini%`n`n`nWould you like to continue? (press Yes or No)
+MsgBox, 4,, Periodic Decos postcode update (BagPC) will be executed.`n`nAll settings are expected to be in: %Locations_ini%`n`n`nWould you like to continue? (press Yes or No)
 IfMsgBox No
 {  
-  Einde()
+  Exit
 }
 
 
@@ -87,7 +102,7 @@ IfNotExist, %Logdir%
 {
   FormatTime, CurrentDateTime,, yyyyMMdd HH:mm:ss
   MsgBox, %CurrentDateTime% - Logdirectory %Logdir% does not exist !
-  Einde() 
+  Einde(noExitDlg) 
 } 
 
 ;***********************************************
@@ -95,9 +110,9 @@ IfNotExist, %Logdir%
 ;***********************************************
 if !FileExist(Locations_ini)
 {
-  Msg=Configfile %Locations_ini%  does not exist but NEEDS to be present !  
+  Msg=Configfile %Locations_ini%  does not exist but it NEEDS to be present !  
   WriteLog( Msg )
-  Einde() 
+  Einde(noExitDlg) 
 } 
 
 
@@ -113,7 +128,7 @@ if ErrorLevel  ; Successfully loaded.
 {
   Msg=An error has occurred when reading %Locations_ini%
   WriteLog( Msg )
-  Einde() 
+  Einde(ExitDlg) 
 }
 
 ;************************************************
@@ -180,7 +195,7 @@ IfNotExist, %Destdir%
 {
   Msg=Unzip destination %Destdir%  does not exist. Check %Locations_ini% !
   WriteLog( Msg )
-  Einde() 
+  Einde(NoExitDlg) 
 } 
 
 ;***********************************************
@@ -190,7 +205,7 @@ IfNotExist, %Unzip%
 {
   Msg=Unzip executable %Unzip%  does not exist. Check %Locations_ini% !
   WriteLog( Msg )
-  Einde() 
+  Einde(ExitDlg) 
 } 
 
 ;************************************************
@@ -218,8 +233,9 @@ Loop, %BagPC%\*.zip
 if ( Ext_Count <> 1 )
 {
   Msg=Error: zipfile %BagPCzip% does not to exist.  Check %Locations_ini% !
-  WriteLog( Msg )
-  Einde() 
+  debug=1
+  WriteLog( Msg ) 
+  Einde(ExitDlg) 
 }
 else
 {  
@@ -231,10 +247,12 @@ else
 ;********************************************************************
 ;VOOR WE BEGINNEN... SAMENVATTING GEVONDEN MEUK
 ;********************************************************************
-MsgBox, 4,, Opgehaalde variabelen:`n`nUnzip met: %Unzip%`n`nUnzip naar: %Destdir%`n`nGevonden BagPC update file: %BagPCzip%`n`n`nWould you like to continue? (press Yes or No)
+MsgBox, 4,, Retrieved variables::`n`nLog to: %Logfile%`n`nUnzip using: %Unzip%`n`nUnzip destination: %Destdir%`n`nFound BagPC update file: %BagPCzip%`n`n`nWould you like to continue? (press Yes or No)
 IfMsgBox No
 {  
-  Einde()
+  Msg=Script execution aborted due to user's decision
+  WriteLog( Msg )
+  Einde(ExitDlg)
 }
 
 
@@ -249,7 +267,7 @@ if ErrorLevel = ERROR
   Msg=An error occurred unzipping %BagPCzip%
   MsgBox, %Msg%
   WriteLog( Msg )
-  Einde()
+  Einde(ExitDlg)
 }
 Else
 {
@@ -262,6 +280,7 @@ Else
   WriteLog( Msg )
 }
 
+sleep 3000
 
 ;********************************************
 ;Convert monthabbrev into full
@@ -286,9 +305,9 @@ else if ( BagPCmonth = "okt" )
 }
 else
 {
-  Msg=%BagPCmonth% is een onbekende maand !
+  Msg=%BagPCmonth% is unknown as month !
   WriteLog ( Msg )
-  Einde()
+  Einde(ExitDlg)
 }
 
 POCOHead=Decos Postcode-update %BagPCmonth_full% %BagPCyear% (BAG)
@@ -302,7 +321,7 @@ WriteLog( Msg )
 Run, %BagPCexe%, , Min UseErrorLevel, AiDee  ; Launch maximized and don't display dialog if it fails.
 
 Sleep 3000
-WriteLog("Na de sleep van 3000")
+WriteLog("Wakeup after 3 secs sleep")
 
 
 ;**********************************************
@@ -333,11 +352,13 @@ IfWinActive, %BAGHead%
 
 
   Sleep 5000
+  WriteLog("Wakeup after 5 secs sleep")
+
   Send {Enter}
 
   Msg=No Decos databaseconnection ? Postcode update not succesfull !
   WriteLog( Msg )
-  Einde()
+  Einde(ExitDlg)
 }
 
 ;*************************************************
@@ -347,7 +368,6 @@ IfWinActive, %BAGHead%
 WinActivate, %POCOHead%
 IfWinActive, %POCOHead%
 {
-
 
   ControlFocus, Start update, %POCOHead%  ; Set focus to the OK button
   
@@ -372,6 +392,36 @@ IfWinActive, %BAGHead%
 
   Msg=OK final dialogbox was closed !
   WriteLog( Msg )
+
+  sleep 3000
+  ;Now we have to get rid of the used unzipped executable and rename the zipfile to @zip_done
+  ;In case of error, the %ErrorLevel% variable contains the number of file that are NOT deleted
+  FileDelete, %BagPCexe%
+  
+  if ( ErrorLevel > 0 )
+  {
+    Msg=At least %ErrorLevel% file(s) not deleted !
+    sv_debug=debug
+    debug=1
+    WriteLog( Msg )
+    debug=sv_debug
+  }  
+
+  if ErrorLevel = ERROR
+  {
+    Msg=An error occurred deleting %BagPCexe%
+    sv_debug=debug
+    debug=1
+    WriteLog( Msg )
+    debug=sv_debug
+    Einde(ExitDlg)
+  }  
+  else
+  {
+     Msg=Update ended succesfully
+     Writelog( Msg )
+     FileMove, %BagPCzip%, %BagPCzip%_done
+  }
 }
 
-Einde()
+Einde(ExitDlg)
