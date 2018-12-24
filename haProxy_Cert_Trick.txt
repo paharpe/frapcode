@@ -1,0 +1,102 @@
+Wat: Er kwam een CTASK om IAM certificaat rpl.amsterdam.nl te vervangen
+Hoe: Via Johnny erachter gekomen dat dit certificaat niet meer gebruikt werd maar was ondergebracht in een SAN certificaat
+
+1) Op de 'nieuwe'  opstapserver het certificaat ( dus niet meer in gebruik ) bekeken
+
+   SUDCMV1000 ~]$ openssl s_client -connect rpl3.amsterdam.nl:443 -servername rpl3.amsterdam.nl < /dev/null | openssl x509 -text
+
+
+2) In het sheet van Gertjan stond in de kolom "Verwijst naar" het IP adres: 10.204.43.18
+   Dit blijkt een VIP adres te zijn van de HAProxy su444v1207. Hiernaar geconnect via 
+   de IAM opstapserver sw444v1384.
+   Wat nuttige commando's: 
+   - [root@su444v1207 ~]# vi /etc/haproxy/haproxy.cfg 
+   - [root@su444v1207 ~]# vi /etc/ssl/extern/pki_extern_prd_sp1.pem
+
+   De aldus verkregen certificaatinfo via deze site: https://www.sslshopper.com/certificate-decoder.html
+   zichtbaar gemaakt, waaruit ook bleek dat 'rpl3.amsterdam.nl'  onderdeel was van dit SAN certificaat:
+  
+   ################################################################################
+   Gepeeste certificaat data:
+   ################################################################################
+   ----BEGIN CERTIFICATE-----
+   MIILgjCCCWqgAwIBAgIUa9hbPsZg/+374Crtf1Z0cLUzn8YwDQYJKoZIhvcNAQEL
+   BQAwgYIxCzAJBgNVBAYTAk5MMSAwHgYDVQQKDBdRdW9WYWRpcyBUcnVzdGxpbmsg
+   Qi5WLjEXMBUGA1UEYQwOTlRSTkwtMzAyMzc0NTkxODA2BgNVBAMML1F1b1ZhZGlz
+   IFBLSW92ZXJoZWlkIE9yZ2FuaXNhdGllIFNlcnZlciBDQSAtIEczMB4XDTE4MDEz
+   MTEzNDgyMVoXDTIxMDEzMTEzNTgwMFowgbMxHTAbBgNVBAUTFDAwMDAwMDAxMDAy
+   NTY0NDQwMDAwMQswCQYDVQQGEwJOTDEWMBQGA1UECAwNTm9vcmQtSG9sbGFuZDES
+   MBAGA1UEBwwJQW1zdGVyZGFtMSYwJAYDVQQKDB1HZW1lZW50ZSBBbXN0ZXJkYW0g
+   RGllbnN0IElDVDEQMA4GA1UECwwHUlZFIElDVDEfMB0GA1UEAwwWaWFtcHJkc3Ax
+   LmFtc3RlcmRhbS5ubDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALsm
+   OfU9q5FJ2VHLNgGYXtHKGLccPbC35ABq+clDnefXWnop9I/0xo9OT4oGqJ9E5ZB/
+   BrgxelmrBxBy8L5TO2J3nsFHYl6PBOOw/syT5CrVbbbaXnTSbsVVDBA9vNFA18vm
+   lRbcarea/DIxBodOF/DEkLdmSZOymhKa1PvtZ80PobYTGDUbQRItFSwkp6tDalH
+   2VjH+r8KgfSQTISfqdYoD8e0/ag4lHJy+tiS7sx4YspQ0I2bknOmE5G0Tnh/aI5Y
+   Jjw35WF6o7kwot4uOco/5U1oMynyi6l14JdGI8yUaYtmCqEysr41hvBtA8otwoPL
+   K6mORiPemskNGFanb2UCAwEAAaOCBrswgga3MHsGCCsGAQUFBwEBBG8wbTA8Bggr
+   BgEFBQcwAoYwaHR0cDovL3RydXN0LnF1b3ZhZGlzZ2xvYmFsLmNvbS9wa2lvc2Vy
+   dmVyZzMuY3J0MC0GCCsGAQUFBzABhiFodHRwOi8vc2wub2NzcC5xdW92YWRpc2ds
+   b2JhbC5jb20wHQYDVR0OBBYEFGA4J2dLGp4cuL93wr0unmLp8jmAMB8GA1UdIwQY
+   MBaAFLfp0On/Zw7ZnAwHLpfUfkt5ePQgMIIBOgYDVR0gBIIBMTCCAS0wggEfBgpg
+   hBABh2sBAgUGMIIBDzA0BggrBgEFBQcCARYoaHR0cDovL3d3dy5xdW92YWRpc2ds
+   b2JhbC5jb20vcmVwb3NpdG9yeTCB1gYIKwYBBQUHAgIwgckMgcZSZWxpYW5jZSBv
+   biB0aGlzIGNlcnRpZmljYXRlIGJ5IGFueSBwYXJ0eSBhc3N1bWVzIGFjY2VwdGFu
+   Y2Ugb2YgdGhlIHJlbGV2YW50IFF1b1ZhZGlzIENlcnRpZmljYXRpb24gUHJhY3Rp
+   Y2UgU3RhdGVtZW50IGFuZCBvdGhlciBkb2N1bWVudHMgaW4gdGhlIFF1b1ZhZGlz
+   IHJlcG9zaXRvcnkgKGh0dHA6Ly93d3cucXVvdmFkaXNnbG9iYWwuY29tKS4wCAYG
+   Z4EMAQICMD8GA1UdHwQ4MDYwNKAyoDCGLmh0dHA6Ly9jcmwucXVvdmFkaXNnbG9i
+   YWwuY29tL3BraW9zZXJ2ZXJnMy5jcmwwDgYDVR0PAQH/BAQDAgWgMB0GA1UdJQQW
+   MBQGCCsGAQUFBwMCBggrBgEFBQcDATCCAdQGA1UdEQSCAcswggHHghZpYW1wcmRz
+   cDEuYW1zdGVyZGFtLm5sghBndmEuYW1zdGVyZGFtLm5sghBnaXIuYW1zdGVyZGFt
+   Lm5sghBta3MuYW1zdGVyZGFtLm5sghBhd20uYW1zdGVyZGFtLm5sghN3bW9uZWQu
+   YW1zdGVyZGFtLm5sghd3bW9wb3J0YWFsLmFtc3RlcmRhbS5ubIIRcnBsMy5hbXN0
+   ZXJkYW0ubmyCEHplYy5hbXN0ZXJkYW0ubmyCG2dvLXRpbWV0ZWxsYXBwLmFtc3Rl
+   cmRhbS5ubIIbZ28tdGltZXRlbGx3ZWIuYW1zdGVyZGFtLm5sghtpYi10aW1ldGVs
+   bGFwcC5hbXN0ZXJkYW0ubmyCG2liLXRpbWV0ZWxsd2ViLmFtc3RlcmRhbS5ubIIc
+   cG1iLXRpbWV0ZWxsYXBwLmFtc3RlcmRhbS5ubIIccG1iLXRpbWV0ZWxsd2ViLmFt
+   c3RlcmRhbS5ubIIVY29yYS5pdnYuYW1zdGVyZGFtLm5sgh5wbGF0Zm9ybWFtc3Rl
+   cmRhbS5hbXN0ZXJkYW0ubmyCF3N0YWRzbG9vZHMuYW1zdGVyZGFtLm5sghJ2aWFu
+   bC5hbXN0ZXJkYW0ubmwwggJwBgorBgEEAdZ5AgQCBIICYASCAlwCWgB3ALvZ37wf
+   inG1k5Qjl6qSe0c4V5UKq1LoGpCWZDaOHtGFAAABYUyC4aUAAAQDAEgwRgIhAOdz
+   voMPxxMLVo0tVc+37ILDn8H9wj0ZZyZHPam0M4msAiEAoa7EIPoNEDxtJsCAS+4a
+   JtFhSabPHk+AyfPrPVIQt2wAdwCkuQmQtBhYFIe7E6LMZ3AKPDWYBPkb37jjd80O
+   yA3cEAAAAWFMguJDAAAEAwBIMEYCIQCHJNmFqgY2JIfycvSyutflxS1cKtpWyN8P
+   DKRiSO5TxQIhALM0yGmPdyR1G/s65OU/IhcnM0m4eYljKxbTXiS+wXe6AHYA7ku9
+   t3XOYLrhQmkfq+GeZqMPfl+wctiDAMR7iXqo/csAAAFhTILjhAAABAMARzBFAiA2
+   qm3d21vzT9Pprlrcw0zEDyM6u/cZuFiFKs8i1BDzOgIhALN0NbuE+/SgmblyYiYQ
+   0o+TdadRXII51VgmqJdrx6DxAHUAVYHUwhaQNgFK6gubVzxT8MDkOHhwJQgXL6Oq
+   HQcT0wwAAAFhTILk3QAABAMARjBEAiBQKJcZ8sXVJeT6cdAxBT7P+wV6rOTfHRZ/
+   EjO+dmqlHwIgRXeg+j79kbBbm921BgSmZDYPjDhSKA8xfhJxul1s+gcAdwBvU3as
+   MfAxGdiZAKRRFf93FRwR2QLBACkGjbIImjfZEwAAAWFMguXYAAAEAwBIMEYCIQCe
+   dy0tijdNtZxg89db7qXuh+udnmrlRZtFmXwX+te/CQIhAODy5+z5FiltBL0xnrDE
+   cHV7T0z2rs3PfVRvvVnAMkzxMA0GCSqGSIb3DQEBCwUAA4ICAQATiSk7KCfHuWnR
+   b6QOKeBn55hxRQy8sK0P21GJteV1Qdn4A7X4KdyWUWZf5R+vPs/PtWXq5aI4yE/p
+   c53Ovlu4BBcPz5iHG9kx273RzqqKVlJoO0Ac7EgxMPn9egHQF2d1xYdLRimJmBMW
+   letx8D63dEutbhpYYpxu6ZLTFIvaZuU/bVJY3jXsHXMwwkKA7R7VRASSatd0048W
+   bP9kpQYx/fknkyjXeYhJvir7mBZ8WH9HWU+1QA85cSBs3665nQy9+Bm0h+GXEkkl
+   iv3xEe5uDKDxAnXzKAPHvTRQygkLglf+VDWyfI+rcR3/Q7bXOVDOFrjjVPcMJu8Y
+   cMSswMzMBsCHLqSWEK8FZ4DkLxuSoeJ6O8IKT2eh6XFaCVqumZcixXewVVW7l0bR
+   wMOr2QJCmkgFgJcL7w+s2Ae3h93luwlvYhWcKUYQmMQtl+mslywydbQyUdNIUshp
+   zAF0iP5mhyaaOpaqEoeiNut7TC9wGar88XSonmLfuIquaAFgWlLPpr2o7TPoplXy
+   UWaGHMMW7AeNOhQQdCEX0n2XMKH6Db6eNwH2afu9y2vo000gUQnbvpR9WDGf+/kU
+   y9F1Ap/2cDMHrRGFFSko4LTSCgw1j7045I1dUbdPt8bXd0mHrlM+u2a6b66XODwH
+   AwAEaNAe0DDGSLq7OMPu8lX4I6vK5w==
+   ----END CERTIFICATE-----
+
+
+   #################################################################################
+   Uitgelezen informatie
+   #################################################################################
+   Certificate Information:
+   Common Name: iamprdsp1.amsterdam.nl
+   Subject Alternative Names: iamprdsp1.amsterdam.nl, gva.amsterdam.nl, gir.amsterdam.nl, mks.amsterdam.nl, awm.amsterdam.nl, wmoned.amsterdam.nl, wmoportaal.amsterdam.nl, rpl3.amsterdam.nl, zec.amsterdam.nl, go-timetellapp.amsterdam.nl, go-timetellweb.amsterdam.nl, ib-timetellapp.amsterdam.nl, ib-timetellweb.amsterdam.nl, pmb-timetellapp.amsterdam.nl, pmb-timetellweb.amsterdam.nl, cora.ivv.amsterdam.nl, platformamsterdam.amsterdam.nl, stadsloods.amsterdam.nl, vianl.amsterdam.nl
+   Organization: Gemeente Amsterdam Dienst ICT
+   Organization Unit: RVE ICT
+   Locality: Amsterdam
+   State: Noord-Holland
+   Country: NL
+   Valid From: January 31, 2018
+   Valid To: January 31, 2021
+   Issuer: QuoVadis PKIoverheid Organisatie Server CA - G3, QuoVadis Trustlink B.V.
+   Serial Number: 6bd85b3ec660ffedfbe02aed7f567470b5339fc6
