@@ -1,4 +1,4 @@
-Wat: Er kwam een CTASK om IAM certificaat rpl.amsterdam.nl te vervangen
+Wat: Er kwam een CTASK om IAM certificaat rpl3.amsterdam.nl te vervangen
 Hoe: Via Johnny erachter gekomen dat dit certificaat niet meer gebruikt werd maar was ondergebracht in een SAN certificaat
 
 1) Op de 'nieuwe'  opstapserver het certificaat ( dus niet meer in gebruik ) bekeken
