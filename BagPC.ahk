@@ -70,7 +70,7 @@ Einde(Dlg)
 #SingleInstance force
 
 Basepath=C:\management
-Locations_ini=%Basepath%\Scripts\bagpc.config
+Locations_ini=%Basepath%\Scripts\BagPC\bagpc.config
 Logdir=%Basepath%\log
 Logfile=%Logdir%\BagPC_update.log
 ExitDlg=1
@@ -87,7 +87,7 @@ Ext_Count=0
 MsgBox, 4,, Periodic Decos postcode update (BagPC) will be executed.`n`nAll settings are expected to be in: %Locations_ini%`n`n`nWould you like to continue? (press Yes or No)
 IfMsgBox No
 {  
-  Exit
+  Einde(noExitDlg)
 }
 
 
@@ -111,7 +111,8 @@ IfNotExist, %Logdir%
 if !FileExist(Locations_ini)
 {
   Msg=Configfile %Locations_ini%  does not exist but it NEEDS to be present !  
-  WriteLog( Msg )
+  debug=1
+  WriteLog( Msg )  
   Einde(noExitDlg) 
 } 
 
@@ -217,7 +218,7 @@ IfNotExist, %Unzip%
 ; Het aantal  komma's bepaalt welk onderdeel van de het fullpath wordt teruggeven
 ; en de extensie komt dus na de 3e komma 
 
-Loop, %BagPC%\*.zip
+Loop, %BagPC%\Postcode*.zip
 {
   SplitPath,A_Loopfilefullpath,,, ext
 
@@ -226,13 +227,13 @@ Loop, %BagPC%\*.zip
      ; msgbox, %A_Loopfilefullpath%
      BagPCzip=%A_Loopfilefullpath%
      SplitPath, A_Loopfilefullpath,,,, BagPCfile
-     ;jan2018 | apr2018 | jul2018 | okt2018     
+     ;jan2018 | apr2018 | jul2018 | okt2018   
      Ext_Count++
   }
 }
 if ( Ext_Count <> 1 )
 {
-  Msg=Error: zipfile %BagPCzip% does not to exist.  Check %Locations_ini% !
+  Msg=Error: There are %Ext_Count% zipfile(s) found, where there should be only 1(one). Check %Locations_ini% !
   debug=1
   WriteLog( Msg ) 
   Einde(ExitDlg) 
