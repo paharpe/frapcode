@@ -1,0 +1,65 @@
+Voor  krap systemen  met weinig swap   storage  (2GB). Graag  upgraden zo  .
+
+
+Check   the  status : 
+
+
+
+[root@su444v1147 ~]# top
+top - 09:08:03 up 21 days,  5:00,  1 user,  load average: 0.02, 0.04, 0.05
+Tasks: 283 total,   2 running, 281 sleeping,   0 stopped,   0 zombie
+%Cpu(s): 11.4 us,  5.7 sy,  0.0 ni, 82.9 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+KiB Mem :  8174420 total,   304428 free,  5805548 used,  2064444 buff/cache
+KiB Swap:  2097148 total,  1452284 free,   644864 used.  1840940 avail Mem
+
+Extend naar 4 G 
+
+[root@su444v1147 ~]# lvresize  --size  4G  /dev/mapper/vg00-lvswap
+  Size of logical volume vg00/lvswap changed from 2.00 GiB (512 extents) to 4.00 GiB (1024 extents).
+  Logical volume vg00/lvswap successfully resized.
+
+
+Umount the swap 
+
+[root@su444v1147 ~]# swapoff  -a
+
+Make swap partition on new size volume 
+
+[root@su444v1147 ~]# mkswap   -f /dev/mapper/vg00-lvswap
+mkswap: /dev/mapper/vg00-lvswap: warning: wiping old swap signature.
+Setting up swapspace version 1, size = 4194300 KiB
+no label, UUID=80bbe0cd-ab4d-40ac-a29d-fae968e96b3d 
+
+
+Swap on  and  check the new  size 
+
+[root@su444v1147 ~]# swapon  -a
+[root@su444v1147 ~]# top
+top - 09:17:00 up 21 days,  5:09,  1 user,  load average: 0.02, 0.11, 0.09
+Tasks: 279 total,   1 running, 278 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  1.3 us,  0.5 sy,  0.0 ni, 98.2 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+KiB Mem :  8174420 total,   196860 free,  6344800 used,  1632760 buff/cache
+KiB Swap:  4194300 total,  4194300 free,        0 used.  1293640 avail Mem
+
+
+
+
+
+
+
+
+
+Mvg/Regards
+Mohamed EL Khamlichi 
+Technical Consultant Architect  Gemeente Amsterdam 
+Linux Redhat Engineer Certified .
+BO DCO Government OPR Team 2
+
+
+ 
+
+KPN Corporate Market
+Paalbergweg 1-3
+1105 AG Amsterdam
+Mobiel: 06-23420571
+
